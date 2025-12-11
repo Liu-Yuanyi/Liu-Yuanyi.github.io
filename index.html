@@ -28,6 +28,24 @@
         p {
             color: #666;
         }
+        .links {
+            margin-top: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        a {
+            text-decoration: none;
+            color: #007bff;
+            padding: 0.5rem 1rem;
+            border: 1px solid #007bff;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        a:hover {
+            background-color: #007bff;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -35,6 +53,12 @@
         <h1>你好，我是刘小康</h1>
         <p>欢迎来到我的个人网站！</p>
         <p>网站正在建设中...</p>
+        
+        <div class="links">
+            <a href="/poetry">📜 读一首诗</a>
+            <a href="https://www.cnblogs.com/rainybunny" target="_blank">💻 访问我的博客 (RainyBunny)</a>
+            <a href="下半学期笔记.md" download>📥 下载下半学期笔记</a>
+        </div>
     </div>
 </body>
 </html>

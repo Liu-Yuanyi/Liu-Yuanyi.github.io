@@ -209,6 +209,35 @@
             font-size: 1.2em;
         }
 
+        /* Navigation Buttons */
+        .modal-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .nav-btn {
+            background-color: rgba(255,255,255,0.1);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-btn:hover {
+            background-color: var(--text-color);
+            border-color: var(--text-color);
+            transform: translateY(-2px);
+        }
+
         /* Tag styles */
         .tag {
             font-size: 0.6em;
@@ -284,6 +313,18 @@
 
         <div class="modal-section-title">进阶判例 & 规则细节</div>
         <ul class="rule-list" id="m-rules"></ul>
+
+        <!-- Navigation -->
+        <div class="modal-nav">
+            <button class="nav-btn" id="prevRole" onclick="navigateRole(-1)">
+                <span>←</span>
+                <span id="prev-name">上一个</span>
+            </button>
+            <button class="nav-btn" id="nextRole" onclick="navigateRole(1)">
+                <span id="next-name">下一个</span>
+                <span>→</span>
+            </button>
+        </div>
     </div>
 </div>
 
@@ -513,8 +554,18 @@
     const mTitle = document.getElementById('m-title');
     const mDesc = document.getElementById('m-desc');
     const mRules = document.getElementById('m-rules');
+    
+    let currentRoleIndex = -1;
 
     function openModal(role) {
+        currentRoleIndex = roles.findIndex(r => r.id === role.id);
+        updateModalContent();
+        modal.classList.add('active');
+    }
+    
+    function updateModalContent() {
+        const role = roles[currentRoleIndex];
+        
         mTitle.innerHTML = `${role.icon} ${role.name} <span class="tag" style="background:${getFactionColor(role.type)}">${getFactionName(role.type)}</span>`;
         mTitle.style.color = getFactionColor(role.type);
         mDesc.textContent = role.desc;
@@ -529,13 +580,35 @@
         } else {
             mRules.innerHTML = '<li>暂无特别争议规则。</li>';
         }
-
-        modal.classList.add('active');
+        
+        updateNavButtons();
+    }
+    
+    function updateNavButtons() {
+        const prevIndex = (currentRoleIndex - 1 + roles.length) % roles.length;
+        const nextIndex = (currentRoleIndex + 1) % roles.length;
+        
+        document.getElementById('prev-name').textContent = roles[prevIndex].name;
+        document.getElementById('next-name').textContent = roles[nextIndex].name;
+    }
+    
+    function navigateRole(direction) {
+        currentRoleIndex = (currentRoleIndex + direction + roles.length) % roles.length;
+        updateModalContent();
     }
 
     function closeModal() {
         modal.classList.remove('active');
     }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (!modal.classList.contains('active')) return;
+        
+        if (e.key === 'ArrowLeft') navigateRole(-1);
+        if (e.key === 'ArrowRight') navigateRole(1);
+        if (e.key === 'Escape') closeModal();
+    });
 
     // Close modal when clicking outside
     modal.addEventListener('click', (e) => {

@@ -298,6 +298,26 @@
             line-height: 1;
         }
 
+        .icon-glyph {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 14px;
+            font-weight: 400;
+        }
+
+        .icon-glyph.strike::after {
+            content: '';
+            position: absolute;
+            left: -1px;
+            right: -1px;
+            top: 52%;
+            border-top: 1px solid currentColor;
+            opacity: 0.8;
+            transform: translateY(-50%);
+        }
+
         .all-result-list {
             list-style: none;
             margin: 0;
@@ -869,7 +889,7 @@
             const markBtn = document.createElement('button');
             markBtn.className = 'mini-btn icon-btn';
             markBtn.type = 'button';
-            markBtn.textContent = state.marked ? '↺' : 'S̶';
+            markBtn.innerHTML = state.marked ? '↺' : '<span class="icon-glyph strike">S</span>';
             markBtn.title = state.marked ? '取消删除线' : '加删除线';
             markBtn.setAttribute('aria-label', state.marked ? '取消删除线' : '加删除线');
             markBtn.onclick = () => toggleMark(playerNo);

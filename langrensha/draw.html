@@ -8,6 +8,10 @@
         :root {
             --primary-bg: #1a1a2e;
             --text-color: #e94560;
+            --good-Color: #4ecca3;
+            --god-color: #ffd700;
+            --wolf-color: #e94560;
+            --third-color: #a64ac9;
         }
 
         body {
@@ -252,6 +256,17 @@
             color: #fff;
         }
 
+        .draw-type-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.65);
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.25);
+        }
+
         .all-result {
             margin-top: 16px;
             background: rgba(255,255,255,0.04);
@@ -342,9 +357,18 @@
         }
 
         .player-no {
-            min-width: 64px;
+            min-width: 46px;
             color: #bbb;
             font-variant-numeric: tabular-nums;
+        }
+
+        .player-type-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            border: 1px solid rgba(255,255,255,0.6);
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.2);
         }
 
         .player-role {
@@ -428,7 +452,10 @@
             <div class="draw-card" id="draw-card" onclick="handleDrawCardClick()">
                 <div class="draw-card-inner">
                     <div class="draw-face draw-back">点击查看角色</div>
-                    <div class="draw-face draw-front" id="draw-front-text">角色</div>
+                    <div class="draw-face draw-front" id="draw-front-text">
+                        <span class="draw-type-badge" id="draw-type-badge"></span>
+                        角色
+                    </div>
                 </div>
             </div>
             <p class="draw-status">提示：翻到正面是当前玩家身份，再点一次会翻回背面并推进到下一张。</p>
@@ -472,6 +499,7 @@
     const drawPanel = document.getElementById('draw-panel');
     const drawCard = document.getElementById('draw-card');
     const drawFrontText = document.getElementById('draw-front-text');
+    const drawTypeBadge = document.getElementById('draw-type-badge');
     const drawStatus = document.getElementById('draw-status');
     const revealAllBtn = document.getElementById('reveal-all-btn');
     const allResult = document.getElementById('all-result');
@@ -485,6 +513,21 @@
 
     function isSessionFinished() {
         return drawDeck.length > 0 && !drawFrontVisible && drawIndex >= drawDeck.length;
+    }
+
+    function getRoleTypeColor(type) {
+        switch(type) {
+            case 'god': return 'var(--god-color)';
+            case 'villager': return 'var(--good-Color)';
+            case 'wolf': return 'var(--wolf-color)';
+            case 'third': return 'var(--third-color)';
+            default: return 'var(--good-Color)';
+        }
+    }
+
+    function resolveRoleTypeByName(name) {
+        const matched = roles.find(role => role.name === name);
+        return matched ? matched.type : 'villager';
     }
 
     function ensureJudgeState() {
@@ -724,7 +767,11 @@
 
             drawDeck = state.drawDeck
                 .filter(item => item && item.name)
-                .map(item => ({ name: item.name, icon: item.icon || '🃏' }));
+                .map(item => ({
+                    name: item.name,
+                    icon: item.icon || '🃏',
+                    type: item.type || resolveRoleTypeByName(item.name)
+                }));
 
             if (drawDeck.length === 0) {
                 localStorage.removeItem(SESSION_STORAGE_KEY);
@@ -746,9 +793,13 @@
             if (drawFrontVisible) {
                 const currentRole = drawDeck[drawIndex];
                 drawFrontText.textContent = `${currentRole.icon} ${currentRole.name}`;
+                drawFrontText.appendChild(drawTypeBadge);
+                drawTypeBadge.style.background = getRoleTypeColor(currentRole.type);
                 drawCard.classList.add('is-flipped');
             } else {
                 drawFrontText.textContent = '角色';
+                drawFrontText.appendChild(drawTypeBadge);
+                drawTypeBadge.style.background = 'transparent';
                 drawCard.classList.remove('is-flipped');
             }
 
@@ -794,12 +845,12 @@
             const count = Math.max(1, Number(countInput?.value) || 1);
 
             if (role) {
-                selected.push({ name: role.name, icon: role.icon, count });
+                selected.push({ name: role.name, icon: role.icon, type: role.type, count });
             }
         });
 
         customRoles.forEach(role => {
-            selected.push({ name: role.name, icon: role.icon, count: Math.max(1, Number(role.count) || 1) });
+            selected.push({ name: role.name, icon: role.icon, type: 'villager', count: Math.max(1, Number(role.count) || 1) });
         });
 
         return selected;
@@ -831,7 +882,7 @@
 
         configuredRoles.forEach(role => {
             for (let i = 0; i < role.count; i++) {
-                nextDeck.push({ name: role.name, icon: role.icon });
+                nextDeck.push({ name: role.name, icon: role.icon, type: role.type || 'villager' });
             }
         });
 
@@ -851,6 +902,8 @@
 
         drawCard.classList.remove('is-flipped');
         drawFrontText.textContent = '角色';
+        drawFrontText.appendChild(drawTypeBadge);
+        drawTypeBadge.style.background = 'transparent';
         drawPanel.classList.remove('hidden');
         allResult.classList.add('hidden');
         allResultList.innerHTML = '';
@@ -879,6 +932,10 @@
             no.className = 'player-no';
             no.textContent = `${playerNo}号：`;
 
+            const typeDot = document.createElement('span');
+            typeDot.className = 'player-type-dot';
+            typeDot.style.background = getRoleTypeColor(role.type || 'villager');
+
             const roleText = document.createElement('span');
             roleText.className = 'player-role';
             roleText.textContent = `${role.icon} ${role.name}`;
@@ -906,6 +963,7 @@
             actions.appendChild(removeBtn);
 
             li.appendChild(no);
+            li.appendChild(typeDot);
             li.appendChild(roleText);
             li.appendChild(actions);
 
@@ -923,6 +981,10 @@
                 removedRole.className = 'player-role';
                 removedRole.textContent = `${role.icon} ${role.name}`;
 
+                const removedTypeDot = document.createElement('span');
+                removedTypeDot.className = 'player-type-dot';
+                removedTypeDot.style.background = getRoleTypeColor(role.type || 'villager');
+
                 const removedActions = document.createElement('div');
                 removedActions.className = 'row-actions';
 
@@ -936,6 +998,7 @@
 
                 removedActions.appendChild(restoreBtn);
                 removedLi.appendChild(removedNo);
+                removedLi.appendChild(removedTypeDot);
                 removedLi.appendChild(removedRole);
                 removedLi.appendChild(removedActions);
                 removedList.appendChild(removedLi);
@@ -1047,6 +1110,8 @@
 
         const currentRole = drawDeck[drawIndex];
         drawFrontText.textContent = `${currentRole.icon} ${currentRole.name}`;
+        drawFrontText.appendChild(drawTypeBadge);
+        drawTypeBadge.style.background = getRoleTypeColor(currentRole.type || 'villager');
         drawFrontVisible = true;
         drawCard.classList.add('is-flipped');
         updateDrawStatus();

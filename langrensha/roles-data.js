@@ -94,7 +94,7 @@ const roles = [
     },
     {
         id: 'villager',
-        name: '普通村民',
+        name: '村民',
         icon: '🧑',
         type: 'villager',
         desc: '没有特殊技能。主要靠逻辑分析和投票帮助好人阵营获胜。',

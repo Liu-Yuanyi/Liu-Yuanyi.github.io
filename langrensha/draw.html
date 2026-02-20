@@ -579,16 +579,16 @@
         const shown = Math.min(drawIndex, total);
 
         if (!drawFrontVisible && drawIndex >= total) {
-            drawStatus.textContent = `已抽完全部 ${total} 张卡。可重新配置后再次开始。`;
+            drawStatus.textContent = `已抽完全部 ${total} 张。`;
             return;
         }
 
         if (drawFrontVisible) {
-            drawStatus.textContent = `当前第 ${drawIndex + 1}/${total} 张已翻开，再点一次将翻回背面并进入下一张。`;
+            drawStatus.textContent = `当前 ${drawIndex + 1}/${total} ，请再次点击。`;
             return;
         }
 
-        drawStatus.textContent = `已完成 ${shown}/${total} 张。点击卡牌翻开下一张。`;
+        drawStatus.textContent = `已完成 ${shown}/${total} 。点击翻开下一张。`;
     }
 
     renderRoleConfig();

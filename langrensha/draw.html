@@ -130,17 +130,30 @@
 
         .custom-role-controls {
             display: grid;
-            grid-template-columns: 1fr 90px auto;
+            grid-template-columns: 1fr 120px 80px auto;
             gap: 8px;
             margin-bottom: 10px;
         }
 
-        .custom-role-controls input {
+        .custom-role-controls input,
+        .custom-role-controls select {
             background: #111;
             border: 1px solid rgba(255,255,255,0.2);
             color: #fff;
             border-radius: 6px;
             padding: 8px 10px;
+        }
+
+        .count-preview {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            color: #bbb;
+            font-size: 0.92em;
+        }
+
+        .count-preview strong {
+            color: #fff;
         }
 
         .custom-role-list {
@@ -439,6 +452,12 @@
                 <h3>自定义角色</h3>
                 <div class="custom-role-controls">
                     <input type="text" id="custom-role-name" placeholder="角色名称（如：机械师）">
+                    <select id="custom-role-type">
+                        <option value="god">神职</option>
+                        <option value="villager" selected>平民</option>
+                        <option value="wolf">狼人</option>
+                        <option value="third">第三方</option>
+                    </select>
                     <input type="number" id="custom-role-count" min="1" value="1">
                     <button class="action-btn" type="button" onclick="addCustomRole()">添加</button>
                 </div>
@@ -451,6 +470,9 @@
             <button class="action-btn" type="button" onclick="restoreLastConfig()">一键恢复上局配置</button>
             <button class="action-btn" id="reveal-all-btn" type="button" onclick="confirmRevealAllRoles()">显示身份控制台</button>
             <button class="action-btn" type="button" onclick="restoreBackupSession()">恢复上一局控制台</button>
+            <div class="count-preview">
+                <span>总人数（总卡数）：<strong id="total-card-count">0</strong></span>
+            </div>
             <p class="draw-status" id="draw-status">尚未开始抽卡。</p>
         </div>
 
@@ -494,6 +516,7 @@
     const STORAGE_KEY = 'langrensha_last_config_v1';
     const SESSION_STORAGE_KEY = 'langrensha_current_session_v1';
     const SESSION_BACKUP_KEY = 'langrensha_last_session_backup_v1';
+    const DRAW_CLICK_COOLDOWN_MS = 300;
 
     const customRoles = [];
     let drawDeck = [];
@@ -501,6 +524,7 @@
     let drawFrontVisible = false;
     let judgeState = {};
     let tempJudgeStateSnapshot = null;
+    let lastDrawClickAt = 0;
 
     const drawPanel = document.getElementById('draw-panel');
     const drawCard = document.getElementById('draw-card');
@@ -516,6 +540,7 @@
     const removedList = document.getElementById('removed-list');
     const roleConfigRoot = document.getElementById('role-config-root');
     const customRoleList = document.getElementById('custom-role-list');
+    const totalCardCount = document.getElementById('total-card-count');
 
     function isSessionFinished() {
         return drawDeck.length > 0 && !drawFrontVisible && drawIndex >= drawDeck.length;
@@ -528,6 +553,16 @@
             case 'wolf': return 'var(--wolf-color)';
             case 'third': return 'var(--third-color)';
             default: return 'var(--good-Color)';
+        }
+    }
+
+    function getRoleTypeName(type) {
+        switch(type) {
+            case 'god': return '神职';
+            case 'villager': return '平民';
+            case 'wolf': return '狼人';
+            case 'third': return '第三方';
+            default: return '平民';
         }
     }
 
@@ -552,6 +587,15 @@
         const inTemporaryMode = Boolean(tempJudgeStateSnapshot);
         resetTempBtn.classList.toggle('hidden', inTemporaryMode);
         restoreTempBtn.classList.toggle('hidden', !inTemporaryMode);
+    }
+
+    function getConfiguredTotalCount() {
+        const configuredRoles = collectConfiguredRoles();
+        return configuredRoles.reduce((sum, role) => sum + Math.max(1, Number(role.count) || 1), 0);
+    }
+
+    function updateDeckCountPreview() {
+        totalCardCount.textContent = String(getConfiguredTotalCount());
     }
 
     function applyConfig(config) {
@@ -579,10 +623,12 @@
                 id: `custom_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
                 name: item.name,
                 icon: '🃏',
+                type: item.type || 'villager',
                 count: Math.max(1, Number(item.count) || 1)
             });
         });
         renderCustomRoles();
+        updateDeckCountPreview();
     }
 
     function renderRoleConfig() {
@@ -620,7 +666,9 @@
                 const countInput = item.querySelector('.role-count-input');
                 checkbox.addEventListener('change', () => {
                     countInput.disabled = !checkbox.checked;
+                    updateDeckCountPreview();
                 });
+                countInput.addEventListener('input', updateDeckCountPreview);
 
                 list.appendChild(item);
             });
@@ -632,8 +680,10 @@
 
     function addCustomRole() {
         const nameInput = document.getElementById('custom-role-name');
+        const typeInput = document.getElementById('custom-role-type');
         const countInput = document.getElementById('custom-role-count');
         const name = nameInput.value.trim();
+        const type = typeInput.value;
         const count = Math.max(1, Number(countInput.value) || 1);
 
         if (!name) {
@@ -645,10 +695,12 @@
             id: `custom_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
             name,
             icon: '🃏',
+            type,
             count
         });
 
         nameInput.value = '';
+        typeInput.value = 'villager';
         countInput.value = '1';
         renderCustomRoles();
     }
@@ -670,11 +722,16 @@
             const item = document.createElement('li');
             item.className = 'custom-role-item';
             item.innerHTML = `
-                <span>🃏 ${role.name} × ${role.count}</span>
+                <span>
+                    <span class="player-type-dot" style="display:inline-block;vertical-align:middle;margin-right:6px;background:${getRoleTypeColor(role.type || 'villager')};"></span>
+                    🃏 ${role.name} × ${role.count}（${getRoleTypeName(role.type || 'villager')}）
+                </span>
                 <button class="action-btn" type="button" onclick="removeCustomRole(${index})">移除</button>
             `;
             customRoleList.appendChild(item);
         });
+
+        updateDeckCountPreview();
     }
 
     function getCurrentConfigForSave() {
@@ -689,6 +746,7 @@
 
         const custom = customRoles.map(role => ({
             name: role.name,
+            type: role.type || 'villager',
             count: Math.max(1, Number(role.count) || 1)
         }));
 
@@ -856,7 +914,7 @@
         });
 
         customRoles.forEach(role => {
-            selected.push({ name: role.name, icon: role.icon, type: 'villager', count: Math.max(1, Number(role.count) || 1) });
+            selected.push({ name: role.name, icon: role.icon, type: role.type || 'villager', count: Math.max(1, Number(role.count) || 1) });
         });
 
         return selected;
@@ -904,6 +962,7 @@
         drawFrontVisible = false;
         judgeState = {};
         tempJudgeStateSnapshot = null;
+        lastDrawClickAt = 0;
         updateTempActionButtons();
 
         drawCard.classList.remove('is-flipped');
@@ -1100,6 +1159,12 @@
     function handleDrawCardClick() {
         if (drawDeck.length === 0) return;
 
+        const now = Date.now();
+        if (now - lastDrawClickAt < DRAW_CLICK_COOLDOWN_MS) {
+            return;
+        }
+        lastDrawClickAt = now;
+
         if (drawFrontVisible) {
             drawFrontVisible = false;
             drawIndex += 1;
@@ -1156,6 +1221,7 @@
 
     renderRoleConfig();
     renderCustomRoles();
+    updateDeckCountPreview();
     restoreCurrentSessionState();
 </script>
 </body>

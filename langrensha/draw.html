@@ -266,6 +266,27 @@
             color: #ffd700;
         }
 
+        .console-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .mini-btn {
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            padding: 5px 9px;
+            font-size: 0.82em;
+            cursor: pointer;
+        }
+
+        .mini-btn:hover {
+            background: rgba(255,255,255,0.18);
+        }
+
         .all-result-list {
             list-style: none;
             margin: 0;
@@ -284,6 +305,11 @@
             gap: 10px;
         }
 
+        .player-row.marked .player-role {
+            text-decoration: line-through;
+            opacity: 0.75;
+        }
+
         .player-no {
             min-width: 64px;
             color: #bbb;
@@ -292,6 +318,33 @@
 
         .player-role {
             color: #fff;
+            flex: 1;
+        }
+
+        .row-actions {
+            display: flex;
+            gap: 6px;
+            margin-left: auto;
+        }
+
+        .removed-block {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px dashed rgba(255,255,255,0.15);
+        }
+
+        .removed-title {
+            color: #bbb;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+
+        .removed-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: grid;
+            gap: 6px;
         }
 
         @media (max-width: 600px) {
@@ -334,7 +387,8 @@
         <div class="draw-actions">
             <button class="action-btn" type="button" onclick="startDrawSession()">开始随机抽卡</button>
             <button class="action-btn" type="button" onclick="restoreLastConfig()">一键恢复上局配置</button>
-            <button class="action-btn hidden" id="reveal-all-btn" type="button" onclick="confirmRevealAllRoles()">显示本轮全员身份（法官）</button>
+            <button class="action-btn" id="reveal-all-btn" type="button" onclick="confirmRevealAllRoles()">显示身份控制台</button>
+            <button class="action-btn" type="button" onclick="restoreBackupSession()">恢复上一局控制台</button>
             <p class="draw-status" id="draw-status">尚未开始抽卡。</p>
         </div>
 
@@ -349,8 +403,16 @@
         </div>
 
         <div class="all-result hidden" id="all-result">
-            <h3>🧑‍⚖️ 本轮身份总览（仅法官查看）</h3>
+            <h3>🧑‍⚖️ 身份控制台（仅法官查看）</h3>
+            <div class="console-actions">
+                <button class="mini-btn" id="reset-temp-btn" type="button" onclick="resetJudgeAnnotations()">临时恢复初始状态</button>
+                <button class="mini-btn hidden" id="restore-temp-btn" type="button" onclick="restoreTemporaryJudgeState()">恢复临时前状态</button>
+            </div>
             <ul class="all-result-list" id="all-result-list"></ul>
+            <div class="removed-block hidden" id="removed-block">
+                <div class="removed-title">已删除玩家（可恢复）</div>
+                <ul class="removed-list" id="removed-list"></ul>
+            </div>
         </div>
     </div>
 </div>
@@ -365,11 +427,15 @@
     };
 
     const STORAGE_KEY = 'langrensha_last_config_v1';
+    const SESSION_STORAGE_KEY = 'langrensha_current_session_v1';
+    const SESSION_BACKUP_KEY = 'langrensha_last_session_backup_v1';
 
     const customRoles = [];
     let drawDeck = [];
     let drawIndex = 0;
     let drawFrontVisible = false;
+    let judgeState = {};
+    let tempJudgeStateSnapshot = null;
 
     const drawPanel = document.getElementById('draw-panel');
     const drawCard = document.getElementById('draw-card');
@@ -378,8 +444,65 @@
     const revealAllBtn = document.getElementById('reveal-all-btn');
     const allResult = document.getElementById('all-result');
     const allResultList = document.getElementById('all-result-list');
+    const resetTempBtn = document.getElementById('reset-temp-btn');
+    const restoreTempBtn = document.getElementById('restore-temp-btn');
+    const removedBlock = document.getElementById('removed-block');
+    const removedList = document.getElementById('removed-list');
     const roleConfigRoot = document.getElementById('role-config-root');
     const customRoleList = document.getElementById('custom-role-list');
+
+    function isSessionFinished() {
+        return drawDeck.length > 0 && !drawFrontVisible && drawIndex >= drawDeck.length;
+    }
+
+    function ensureJudgeState() {
+        for (let i = 1; i <= drawDeck.length; i++) {
+            if (!judgeState[i]) {
+                judgeState[i] = { marked: false, removed: false };
+            }
+        }
+    }
+
+    function cloneJudgeState(state) {
+        return JSON.parse(JSON.stringify(state || {}));
+    }
+
+    function updateTempActionButtons() {
+        const inTemporaryMode = Boolean(tempJudgeStateSnapshot);
+        resetTempBtn.classList.toggle('hidden', inTemporaryMode);
+        restoreTempBtn.classList.toggle('hidden', !inTemporaryMode);
+    }
+
+    function applyConfig(config) {
+        document.querySelectorAll('.role-enable').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        document.querySelectorAll('.role-count-input').forEach(input => {
+            input.value = '1';
+            input.disabled = true;
+        });
+
+        (config?.selectedRoles || []).forEach(item => {
+            const checkbox = document.querySelector(`.role-enable[data-role-id="${item.id}"]`);
+            const countInput = document.querySelector(`.role-count-input[data-role-id="${item.id}"]`);
+            if (!checkbox || !countInput) return;
+            checkbox.checked = true;
+            countInput.disabled = false;
+            countInput.value = Math.max(1, Number(item.count) || 1);
+        });
+
+        customRoles.length = 0;
+        (config?.customRoles || []).forEach(item => {
+            if (!item.name) return;
+            customRoles.push({
+                id: `custom_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+                name: item.name,
+                icon: '🃏',
+                count: Math.max(1, Number(item.count) || 1)
+            });
+        });
+        renderCustomRoles();
+    }
 
     function renderRoleConfig() {
         const grouped = { god: [], villager: [], wolf: [], third: [] };
@@ -496,6 +619,120 @@
         localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
     }
 
+    function hasActiveSession() {
+        return drawDeck.length > 0;
+    }
+
+    function saveCurrentSessionState() {
+        if (!hasActiveSession()) {
+            localStorage.removeItem(SESSION_STORAGE_KEY);
+            return;
+        }
+
+        ensureJudgeState();
+
+        const state = {
+            drawDeck,
+            drawIndex,
+            drawFrontVisible,
+            allResultVisible: !allResult.classList.contains('hidden'),
+            config: getCurrentConfigForSave(),
+            judgeState,
+            tempJudgeStateSnapshot
+        };
+
+        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function backupCurrentSessionState() {
+        if (!hasActiveSession()) return;
+        saveCurrentSessionState();
+        const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+        if (raw) {
+            localStorage.setItem(SESSION_BACKUP_KEY, raw);
+        }
+    }
+
+    function restoreBackupSession() {
+        const raw = localStorage.getItem(SESSION_BACKUP_KEY);
+        if (!raw) {
+            alert('没有可恢复的上一局控制台。');
+            return;
+        }
+
+        const currentRaw = localStorage.getItem(SESSION_STORAGE_KEY);
+        if (currentRaw) {
+            const keyword = prompt('当前局状态将被上一局控制台覆盖。\n请输入“恢复上一局”继续：');
+            if (keyword === null) return;
+            if (keyword.trim() !== '恢复上一局') {
+                alert('口令错误，已取消恢复。');
+                return;
+            }
+        }
+
+        localStorage.setItem(SESSION_STORAGE_KEY, raw);
+        restoreCurrentSessionState();
+        drawStatus.textContent = '已恢复上一局身份控制台。';
+    }
+
+    function restoreCurrentSessionState() {
+        const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+        if (!raw) return;
+
+        try {
+            const state = JSON.parse(raw);
+
+            if (state?.config) {
+                applyConfig(state.config);
+            }
+
+            if (!Array.isArray(state?.drawDeck) || state.drawDeck.length === 0) {
+                return;
+            }
+
+            drawDeck = state.drawDeck
+                .filter(item => item && item.name)
+                .map(item => ({ name: item.name, icon: item.icon || '🃏' }));
+
+            if (drawDeck.length === 0) {
+                localStorage.removeItem(SESSION_STORAGE_KEY);
+                return;
+            }
+
+            drawIndex = Math.max(0, Math.min(Number(state.drawIndex) || 0, drawDeck.length));
+            drawFrontVisible = Boolean(state.drawFrontVisible) && drawIndex < drawDeck.length;
+            judgeState = state?.judgeState && typeof state.judgeState === 'object' ? state.judgeState : {};
+            tempJudgeStateSnapshot = state?.tempJudgeStateSnapshot && typeof state.tempJudgeStateSnapshot === 'object'
+                ? state.tempJudgeStateSnapshot
+                : null;
+            ensureJudgeState();
+            updateTempActionButtons();
+
+            drawPanel.classList.remove('hidden');
+            allResult.classList.add('hidden');
+
+            if (drawFrontVisible) {
+                const currentRole = drawDeck[drawIndex];
+                drawFrontText.textContent = `${currentRole.icon} ${currentRole.name}`;
+                drawCard.classList.add('is-flipped');
+            } else {
+                drawFrontText.textContent = '角色';
+                drawCard.classList.remove('is-flipped');
+            }
+
+            const isFinished = !drawFrontVisible && drawIndex >= drawDeck.length;
+            if (state.allResultVisible && isFinished) {
+                renderAllRolesResult();
+                allResult.classList.remove('hidden');
+            }
+
+            drawStatus.textContent = '已自动恢复当前局状态。';
+            updateDrawStatus();
+        } catch {
+            localStorage.removeItem(SESSION_STORAGE_KEY);
+        }
+    }
+
     function restoreLastConfig() {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw) {
@@ -505,35 +742,7 @@
 
         try {
             const config = JSON.parse(raw);
-
-            document.querySelectorAll('.role-enable').forEach(checkbox => {
-                checkbox.checked = false;
-            });
-            document.querySelectorAll('.role-count-input').forEach(input => {
-                input.value = '1';
-                input.disabled = true;
-            });
-
-            (config.selectedRoles || []).forEach(item => {
-                const checkbox = document.querySelector(`.role-enable[data-role-id="${item.id}"]`);
-                const countInput = document.querySelector(`.role-count-input[data-role-id="${item.id}"]`);
-                if (!checkbox || !countInput) return;
-                checkbox.checked = true;
-                countInput.disabled = false;
-                countInput.value = Math.max(1, Number(item.count) || 1);
-            });
-
-            customRoles.length = 0;
-            (config.customRoles || []).forEach(item => {
-                if (!item.name) return;
-                customRoles.push({
-                    id: `custom_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-                    name: item.name,
-                    icon: '🃏',
-                    count: Math.max(1, Number(item.count) || 1)
-                });
-            });
-            renderCustomRoles();
+            applyConfig(config);
 
             drawStatus.textContent = '已恢复上局配置，可直接开始抽卡。';
         } catch {
@@ -573,6 +782,18 @@
     }
 
     function startDrawSession() {
+        if (hasActiveSession()) {
+            const keyword = prompt('检测到当前局仍有记录。为避免误操作丢失，本次会先自动备份当前局。\n请输入“开始新局”继续：');
+            if (keyword === null) {
+                return;
+            }
+            if (keyword.trim() !== '开始新局') {
+                alert('口令错误，已取消开新局。');
+                return;
+            }
+            backupCurrentSessionState();
+        }
+
         const configuredRoles = collectConfiguredRoles();
         const nextDeck = [];
 
@@ -592,38 +813,165 @@
         drawDeck = shuffleArray(nextDeck);
         drawIndex = 0;
         drawFrontVisible = false;
+        judgeState = {};
+        tempJudgeStateSnapshot = null;
+        updateTempActionButtons();
 
         drawCard.classList.remove('is-flipped');
         drawFrontText.textContent = '角色';
         drawPanel.classList.remove('hidden');
-        revealAllBtn.classList.add('hidden');
         allResult.classList.add('hidden');
         allResultList.innerHTML = '';
         updateDrawStatus();
+        saveCurrentSessionState();
     }
 
     function renderAllRolesResult() {
+        ensureJudgeState();
         allResultList.innerHTML = '';
+        removedList.innerHTML = '';
+
+        let removedCount = 0;
+
         drawDeck.forEach((role, index) => {
+            const playerNo = index + 1;
+            const state = judgeState[playerNo] || { marked: false, removed: false };
             const li = document.createElement('li');
+            li.className = 'player-row';
+
+            if (state.marked) {
+                li.classList.add('marked');
+            }
 
             const no = document.createElement('span');
             no.className = 'player-no';
-            no.textContent = `${index + 1}号：`;
+            no.textContent = `${playerNo}号：`;
 
             const roleText = document.createElement('span');
             roleText.className = 'player-role';
             roleText.textContent = `${role.icon} ${role.name}`;
 
+            const actions = document.createElement('div');
+            actions.className = 'row-actions';
+
+            const markBtn = document.createElement('button');
+            markBtn.className = 'mini-btn';
+            markBtn.type = 'button';
+            markBtn.textContent = state.marked ? '取消删除线' : '加删除线';
+            markBtn.onclick = () => toggleMark(playerNo);
+
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'mini-btn';
+            removeBtn.type = 'button';
+            removeBtn.textContent = '删除玩家';
+            removeBtn.onclick = () => setPlayerRemoved(playerNo, true);
+
+            actions.appendChild(markBtn);
+            actions.appendChild(removeBtn);
+
             li.appendChild(no);
             li.appendChild(roleText);
-            allResultList.appendChild(li);
+            li.appendChild(actions);
+
+            if (state.removed) {
+                removedCount += 1;
+
+                const removedLi = document.createElement('li');
+                removedLi.className = 'player-row';
+
+                const removedNo = document.createElement('span');
+                removedNo.className = 'player-no';
+                removedNo.textContent = `${playerNo}号：`;
+
+                const removedRole = document.createElement('span');
+                removedRole.className = 'player-role';
+                removedRole.textContent = `${role.icon} ${role.name}`;
+
+                const removedActions = document.createElement('div');
+                removedActions.className = 'row-actions';
+
+                const restoreBtn = document.createElement('button');
+                restoreBtn.className = 'mini-btn';
+                restoreBtn.type = 'button';
+                restoreBtn.textContent = '恢复玩家';
+                restoreBtn.onclick = () => setPlayerRemoved(playerNo, false);
+
+                removedActions.appendChild(restoreBtn);
+                removedLi.appendChild(removedNo);
+                removedLi.appendChild(removedRole);
+                removedLi.appendChild(removedActions);
+                removedList.appendChild(removedLi);
+            } else {
+                allResultList.appendChild(li);
+            }
         });
+
+        removedBlock.classList.toggle('hidden', removedCount === 0);
+    }
+
+    function toggleMark(playerNo) {
+        ensureJudgeState();
+        if (tempJudgeStateSnapshot) {
+            tempJudgeStateSnapshot = null;
+            updateTempActionButtons();
+        }
+        judgeState[playerNo].marked = !judgeState[playerNo].marked;
+        renderAllRolesResult();
+        saveCurrentSessionState();
+    }
+
+    function setPlayerRemoved(playerNo, removed) {
+        ensureJudgeState();
+        if (tempJudgeStateSnapshot) {
+            tempJudgeStateSnapshot = null;
+            updateTempActionButtons();
+        }
+        judgeState[playerNo].removed = removed;
+        renderAllRolesResult();
+        saveCurrentSessionState();
+    }
+
+    function resetJudgeAnnotations() {
+        if (!isSessionFinished()) {
+            alert('当前局尚未抽完，暂不能恢复控制台初始状态。');
+            return;
+        }
+
+        if (tempJudgeStateSnapshot) {
+            alert('你已经在临时状态中，请先点“恢复临时前状态”。');
+            return;
+        }
+
+        tempJudgeStateSnapshot = cloneJudgeState(judgeState);
+        judgeState = {};
+        ensureJudgeState();
+        updateTempActionButtons();
+        renderAllRolesResult();
+        saveCurrentSessionState();
+    }
+
+    function restoreTemporaryJudgeState() {
+        if (!isSessionFinished()) {
+            alert('当前局尚未抽完，暂不能恢复临时前状态。');
+            return;
+        }
+
+        if (!tempJudgeStateSnapshot) {
+            alert('没有可恢复的临时前状态。');
+            return;
+        }
+
+        judgeState = cloneJudgeState(tempJudgeStateSnapshot);
+        tempJudgeStateSnapshot = null;
+        ensureJudgeState();
+        updateTempActionButtons();
+        renderAllRolesResult();
+        saveCurrentSessionState();
     }
 
     function confirmRevealAllRoles() {
-        const isFinished = drawDeck.length > 0 && !drawFrontVisible && drawIndex >= drawDeck.length;
-        if (!isFinished) {
+        if (!isSessionFinished()) {
+            alert('当前局尚未抽完，不能查看全员身份。');
             return;
         }
 
@@ -639,6 +987,7 @@
 
         renderAllRolesResult();
         allResult.classList.remove('hidden');
+        saveCurrentSessionState();
     }
 
     function handleDrawCardClick() {
@@ -649,6 +998,7 @@
             drawIndex += 1;
             drawCard.classList.remove('is-flipped');
             updateDrawStatus();
+            saveCurrentSessionState();
             return;
         }
 
@@ -662,6 +1012,7 @@
         drawFrontVisible = true;
         drawCard.classList.add('is-flipped');
         updateDrawStatus();
+        saveCurrentSessionState();
     }
 
     function updateDrawStatus() {
@@ -677,11 +1028,8 @@
 
         if (!drawFrontVisible && drawIndex >= total) {
             drawStatus.textContent = `已抽完全部 ${total} 张。`;
-            revealAllBtn.classList.remove('hidden');
             return;
         }
-
-        revealAllBtn.classList.add('hidden');
 
         if (drawFrontVisible) {
             drawStatus.textContent = `当前 ${drawIndex + 1}/${total} ，请再次点击。`;
@@ -691,8 +1039,15 @@
         drawStatus.textContent = `已完成 ${shown}/${total} 。点击翻开下一张。`;
     }
 
+    window.addEventListener('beforeunload', (e) => {
+        if (!hasActiveSession()) return;
+        e.preventDefault();
+        e.returnValue = '';
+    });
+
     renderRoleConfig();
     renderCustomRoles();
+    restoreCurrentSessionState();
 </script>
 </body>
 </html>

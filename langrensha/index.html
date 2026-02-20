@@ -46,6 +46,20 @@
             font-style: italic;
         }
 
+        .jump-link {
+            display: inline-block;
+            margin-top: 12px;
+            color: #ddd;
+            text-decoration: none;
+            padding: 7px 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+        }
+
+        .jump-link:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -64,7 +78,7 @@
             display: flex;
             align-items: center;
         }
-        
+
         .faction-good { border-color: var(--good-Color); color: var(--good-Color); }
         .faction-god { border-color: var(--god-color); color: var(--god-color); }
         .faction-wolf { border-color: var(--wolf-color); color: var(--wolf-color); }
@@ -105,7 +119,6 @@
             font-size: 1.1em;
         }
 
-        /* Modal Styles */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -138,8 +151,8 @@
             box-shadow: 0 15px 50px rgba(0,0,0,0.8);
             transform: scale(0.7);
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            max-height: 85vh; /* 限制最大高度 */
-            overflow-y: auto; /* 超出则滚动 */
+            max-height: 85vh;
+            overflow-y: auto;
         }
 
         .modal-overlay.active .modal-content {
@@ -163,7 +176,7 @@
 
         .modal-title {
             margin-top: 0;
-            color: var(--god-color); 
+            color: var(--god-color);
             font-size: 2em;
             border-bottom: 1px solid rgba(255,255,255,0.1);
             padding-bottom: 15px;
@@ -209,7 +222,6 @@
             font-size: 1.2em;
         }
 
-        /* Navigation Buttons */
         .modal-nav {
             display: flex;
             justify-content: space-between;
@@ -238,7 +250,6 @@
             transform: translateY(-2px);
         }
 
-        /* Tag styles */
         .tag {
             font-size: 0.6em;
             padding: 2px 8px;
@@ -250,7 +261,6 @@
             font-weight: normal;
         }
 
-        /* Responsive */
         @media (max-width: 600px) {
             .cards-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -265,56 +275,42 @@
 <header>
     <h1>🐺 狼人杀角色进阶图鉴</h1>
     <p class="subtitle">具体细则以法官为准</p>
+    <a class="jump-link" href="./draw.html">进入抽卡台</a>
 </header>
 
 <div class="container">
-
-    <!-- 好人阵营 - 神职 -->
     <div class="faction-section">
         <h2 class="faction-title faction-god">好人阵营 · 神职</h2>
-        <div class="cards-grid" id="god-cards">
-            <!-- Cards will be injected via JS -->
-        </div>
+        <div class="cards-grid" id="god-cards"></div>
     </div>
 
-    <!-- 好人阵营 - 平民 -->
     <div class="faction-section">
         <h2 class="faction-title faction-good">好人阵营 · 平民</h2>
-        <div class="cards-grid" id="villager-cards">
-            <!-- Cards will be injected via JS -->
-        </div>
+        <div class="cards-grid" id="villager-cards"></div>
     </div>
 
-    <!-- 坏人阵营 -->
     <div class="faction-section">
         <h2 class="faction-title faction-wolf">坏人阵营 (狼人)</h2>
-        <div class="cards-grid" id="wolf-cards">
-            <!-- Cards will be injected via JS -->
-        </div>
+        <div class="cards-grid" id="wolf-cards"></div>
     </div>
 
-    <!-- 第三方阵营 -->
     <div class="faction-section">
         <h2 class="faction-title faction-third">第三方 / 特殊身份</h2>
-        <div class="cards-grid" id="third-cards">
-            <!-- Cards will be injected via JS -->
-        </div>
+        <div class="cards-grid" id="third-cards"></div>
     </div>
 </div>
 
-<!-- Modal Structure -->
 <div class="modal-overlay" id="modal">
     <div class="modal-content">
         <button class="close-btn" onclick="closeModal()">&times;</button>
         <h2 class="modal-title" id="m-title">角色名称</h2>
-        
+
         <div class="modal-section-title">技能概要</div>
         <div class="skill-desc" id="m-desc"></div>
 
         <div class="modal-section-title">进阶判例 & 规则细节</div>
         <ul class="rule-list" id="m-rules"></ul>
 
-        <!-- Navigation -->
         <div class="modal-nav">
             <button class="nav-btn" id="prevRole" onclick="navigateRole(-1)">
                 <span>←</span>
@@ -328,203 +324,8 @@
     </div>
 </div>
 
+<script src="./roles-data.js"></script>
 <script>
-    const roles = [
-        // --- 神职 ---
-        {
-            id: 'seer',
-            name: '预言家',
-            icon: '🔮',
-            type: 'god',
-            desc: '每晚可以查验一名玩家的身份是好人还是狼人。',
-            rules: [
-                '无法知道具体身份。',
-                '验到“隐狼”显示为好人。',
-                '可以不发动技能，可以验自己，可以重复验人。（OMG谁会这样干）'
-            ]
-        },
-        {
-            id: 'witch',
-            name: '女巫',
-            icon: '🧪',
-            type: 'god',
-            desc: '拥有一瓶解药和一瓶毒药。每晚只能使用一瓶。解药可以救活一名当晚被狼刀的玩家，毒药可以毒杀一名玩家。',
-            rules: [
-                '同守同救（奶穿肠）：如果一名玩家当晚同时被守卫守护和被女巫解药救，该玩家死亡。',
-                '女巫不可自救。（或仅第一夜可以自救）。',
-                '被毒杀的玩家没有遗言。',
-            ]
-        },
-        {
-            id: 'hunter',
-            name: '猎人',
-            icon: '🔫',
-            type: 'god',
-            desc: '当猎人死亡（被狼人刀杀或被投票处决）时，可以开枪带走一名玩家。',
-            rules: [
-                '被女巫毒杀是否能开枪？（通常不能，称“闷枪”）。',
-                '被殉情（随情侣死亡）是否能开枪？（视规则而定，通常不能）。',
-                '开枪是否强制带人？（通常可以压枪不带人）。'
-            ]
-        },
-        {
-            id: 'guard',
-            name: '守卫',
-            icon: '🛡️',
-            type: 'god',
-            desc: '每晚可以守护一名玩家，该玩家当晚不会被狼人杀害。不能连续两晚守护同一个人。',
-            rules: [
-                '同守同救（奶穿肠）：如果一名玩家当晚同时被守卫守护和被女巫解药救，该玩家死亡。',
-                '守卫可以自守。',
-                '只能挡狼刀，不能挡其他方式的死亡（如女巫的毒药）。'
-            ]
-        },
-        {
-            id: 'idiot',
-            name: '白痴',
-            icon: '🤪',
-            type: 'god',
-            desc: '平时与普通村民无异。在白天投票处决环节被投出时，可以翻牌亮明身份，免除死亡，但之后失去投票权。',
-            rules: [
-                '翻牌后狼人可以选择追刀白痴。',
-                '翻牌后正常轮次发言。',
-                '翻牌后属于“存活”状态，仍需占坑位。'
-            ]
-        },
-        {
-            id: 'knight',
-            name: '骑士',
-            icon: '⚔️',
-            type: 'god',
-            desc: '在白天发言阶段，可以随时翻牌决斗一名玩家。若该玩家是狼人，则该狼人死亡，骑士存活，且当立即入夜；若该玩家是好人，则骑士以死谢罪，该好人存活。',
-            rules: [
-                '只要是狼人阵营即判定为狼人。',
-                '第一天通常也能决斗（视规则而定）。',
-            ]
-        },
-        {
-            id: 'mogui',
-            name: '魔术师',
-            icon: '🎩',
-            type: 'god',
-            desc: '每晚在狼人杀人之后，可以交换两个人的号码牌。当晚针对这两个号码的所有判定（验人、毒药、刀人等）随之交换。',
-            rules: [
-                '全局每张牌只能交换一次。',
-                '自己是否可以换自己？（可以）。',
-                '可以选择不交换（即不发动技能）'
-            ]
-        },
-        {
-            id: 'shemeng',
-            name: '摄梦人',
-            icon: '🍷',
-            type: 'god',
-            desc: '每晚必须选择一名玩家成为梦游者。梦游者不知道自己正在梦游，梦游者当晚免疫狼刀和毒药。如果摄梦人死亡，梦游者随之殉情。连续两晚摄同一名玩家，该玩家直接死亡（由于精力耗尽）。',
-            rules: [
-                '不能选择自己为梦游者。'
-            ]
-        },
-
-        // --- 平民 ---
-        {
-            id: 'villager',
-            name: '普通村民',
-            icon: '🧑',
-            type: 'villager',
-            desc: '没有特殊技能。主要靠逻辑分析和投票帮助好人阵营获胜。',
-            rules: []
-        },
-        // {
-        //     id: 'laoliulang',
-        //     name: '老流氓',
-        //     icon: '🚬',
-        //     type: 'villager',
-        //     desc: '平民牌，不会被魅惑，被毒死或者枪带不会翻牌。',
-        //     rules: [
-        //         '进阶板子角色，主要克制第三方或具有魅惑功能的角色。'
-        //     ]
-        // },
-
-        // --- 狼人 ---
-        {
-            id: 'wolf',
-            name: '狼人',
-            icon: '🐺',
-            type: 'wolf',
-            desc: '每晚可以与其他狼人商议杀害一名玩家。白天可以自爆，立即入夜。',
-            rules: [
-                '可以空刀，可以自刀',
-                '屠边：杀完神/杀完民即可获胜。屠城：杀光所有其他阵营的人才获胜。'
-            ]
-        },
-        {
-            id: 'wolf_king',
-            name: '狼王',
-            icon: '👑',
-            type: 'wolf',
-            desc: '死后可以开枪带走一人。',
-            rules: [
-                '被毒杀不能开枪。',
-                '发动技能规则基本等同于猎人。'
-            ]
-        },
-        {
-            id: 'white_wolf',
-            name: '白狼王',
-            icon: '🗯️',
-            type: 'wolf',
-            desc: '在白天发言阶段，可以随时自爆并带走场上一名玩家。然后直接进入黑夜，没有遗言。',
-            rules: []
-        },
-        {
-            id: 'ghost_rider',
-            name: '恶灵骑士',
-            icon: '👻',
-            type: 'wolf',
-            desc: '不能自爆，与狼人一同行动。拥有一次性的反伤技能：若被预言家查验，次日预言家出局；若被女巫使用毒药，次日女巫出局。',
-            rules: [
-                '反伤女巫时，自己不会被毒死。'
-            ]
-        },
-        {
-            id: 'gargoyle',
-            name: '石像鬼',
-            icon: '🗿',
-            type: 'wolf',
-            desc: '不进狼群（与其他狼队友不互认），晚上不刀人，不能自爆。每晚可以查验一名玩家的具体身份（具体角色）。当其他狼同伴全部出局后，进入狼群并获得刀。',
-            rules: []
-        },
-        {
-            id: 'hidden_wolf',
-            name: '隐狼',
-            icon: '🎭',
-            type: 'wolf',
-            desc: '不能自曝身份，被预言家查验结果始终为好人。隐狼夜间知道其他哪些玩家是狼人，但不进狼群。当其他狼同伴全部出局后，进入狼群并获得刀。',
-            rules: []
-        },
-
-        // --- 第三方/特殊 ---
-        {
-            id: 'cupid',
-            name: '丘比特',
-            icon: '💘',
-            type: 'third',
-            desc: '第一晚选择两名玩家成为情侣。情侣中一人死，另一人随之殉情。',
-            rules: [            ]
-        },
-        {
-            id: 'piper',
-            name: '吹笛者',
-            icon: '🎵',
-            type: 'third',
-            desc: '每晚可以迷惑两名玩家，闭眼后所有已经被迷惑的玩家互认。被迷惑的玩家在之后的游戏中依然正常行动。胜利条件是场上所有存活玩家都被迷惑。',
-            rules: [
-                '胜利的必要条件是吹笛者还活着。'
-            ]
-        }
-    ];
-
-    // Functions to render content
     function renderCards() {
         const sections = {
             god: document.getElementById('god-cards'),
@@ -537,24 +338,23 @@
             const card = document.createElement('div');
             card.className = 'role-card';
             card.onclick = () => openModal(role);
-            
+
             card.innerHTML = `
                 <span class="role-icon">${role.icon}</span>
                 <div class="role-name">${role.name}</div>
             `;
-            
+
             if (sections[role.type]) {
                 sections[role.type].appendChild(card);
             }
         });
     }
 
-    // Modal Logic
     const modal = document.getElementById('modal');
     const mTitle = document.getElementById('m-title');
     const mDesc = document.getElementById('m-desc');
     const mRules = document.getElementById('m-rules');
-    
+
     let currentRoleIndex = -1;
 
     function openModal(role) {
@@ -562,14 +362,14 @@
         updateModalContent();
         modal.classList.add('active');
     }
-    
+
     function updateModalContent() {
         const role = roles[currentRoleIndex];
-        
+
         mTitle.innerHTML = `${role.icon} ${role.name} <span class="tag" style="background:${getFactionColor(role.type)}">${getFactionName(role.type)}</span>`;
         mTitle.style.color = getFactionColor(role.type);
         mDesc.textContent = role.desc;
-        
+
         mRules.innerHTML = '';
         if (role.rules && role.rules.length > 0) {
             role.rules.forEach(rule => {
@@ -580,18 +380,18 @@
         } else {
             mRules.innerHTML = '暂无';
         }
-        
+
         updateNavButtons();
     }
-    
+
     function updateNavButtons() {
         const prevIndex = (currentRoleIndex - 1 + roles.length) % roles.length;
         const nextIndex = (currentRoleIndex + 1) % roles.length;
-        
+
         document.getElementById('prev-name').textContent = roles[prevIndex].name;
         document.getElementById('next-name').textContent = roles[nextIndex].name;
     }
-    
+
     function navigateRole(direction) {
         currentRoleIndex = (currentRoleIndex + direction + roles.length) % roles.length;
         updateModalContent();
@@ -601,28 +401,25 @@
         modal.classList.remove('active');
     }
 
-    // Keyboard navigation
     document.addEventListener('keydown', (e) => {
         if (!modal.classList.contains('active')) return;
-        
+
         if (e.key === 'ArrowLeft') navigateRole(-1);
         if (e.key === 'ArrowRight') navigateRole(1);
         if (e.key === 'Escape') closeModal();
     });
 
-    // Close modal when clicking outside
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             closeModal();
         }
     });
 
-    // Helper for styles
     function getFactionColor(type) {
         switch(type) {
             case 'god': return '#ffd700';
             case 'villager': return '#4ecca3';
-            case 'wolf': return '#e94560'; // '#ff4b4b';
+            case 'wolf': return '#e94560';
             case 'third': return '#a64ac9';
             default: return '#fff';
         }
@@ -638,9 +435,7 @@
         }
     }
 
-    // Init
     renderCards();
-
 </script>
 
 </body>

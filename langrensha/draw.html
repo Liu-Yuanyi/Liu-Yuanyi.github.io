@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>狼人杀抽卡台</title>
+    <style>
+        :root {
+            --primary-bg: #1a1a2e;
+            --text-color: #e94560;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: var(--primary-bg);
+            color: #fff;
+            line-height: 1.6;
+        }
+
+        header {
+            text-align: center;
+            padding: 34px 20px;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2.2em;
+        }
+
+        .nav-link {
+            color: #bbb;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .draw-section {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 14px;
+            padding: 20px;
+        }
+
+        .draw-subtitle {
+            margin: 0 0 18px;
+            color: #bbb;
+            font-size: 0.95em;
+        }
+
+        .draw-config-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 20px;
+            margin-bottom: 18px;
+        }
+
+        .config-panel {
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            padding: 14px;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .config-panel h3 {
+            margin-top: 0;
+            font-size: 1.05em;
+            color: #ddd;
+        }
+
+        .role-config-group {
+            margin-bottom: 12px;
+        }
+
+        .role-config-group-title {
+            font-size: 0.9em;
+            color: #aaa;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .role-config-list {
+            display: grid;
+            gap: 8px;
+        }
+
+        .role-config-item {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            padding: 8px 10px;
+        }
+
+        .role-config-item label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 0.95em;
+        }
+
+        .role-count-input {
+            width: 70px;
+            background: #111;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            border-radius: 6px;
+            padding: 6px 8px;
+        }
+
+        .role-count-input:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .custom-role-controls {
+            display: grid;
+            grid-template-columns: 1fr 90px auto;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .custom-role-controls input {
+            background: #111;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            border-radius: 6px;
+            padding: 8px 10px;
+        }
+
+        .custom-role-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            gap: 8px;
+            max-height: 230px;
+            overflow-y: auto;
+        }
+
+        .custom-role-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-size: 0.95em;
+        }
+
+        .draw-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            background-color: rgba(255,255,255,0.1);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.25);
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background-color: var(--text-color);
+            border-color: var(--text-color);
+        }
+
+        .draw-status {
+            color: #bbb;
+            font-size: 0.95em;
+            margin: 0;
+        }
+
+        .draw-panel {
+            margin-top: 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .draw-panel.hidden {
+            display: none;
+        }
+
+        .draw-card {
+            width: min(320px, 80vw);
+            height: 190px;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+
+        .draw-card-inner {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.5s;
+        }
+
+        .draw-card.is-flipped .draw-card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .draw-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            backface-visibility: hidden;
+            text-align: center;
+            padding: 0 12px;
+            box-sizing: border-box;
+        }
+
+        .draw-back {
+            background: linear-gradient(135deg, #2b2d42, #1f2235);
+            color: #fff;
+        }
+
+        .draw-front {
+            background: linear-gradient(135deg, #3c1642, #086972);
+            transform: rotateY(180deg);
+            color: #fff;
+        }
+
+        @media (max-width: 600px) {
+            .draw-config-grid {
+                grid-template-columns: 1fr;
+            }
+            .custom-role-controls {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>🎴 狼人杀抽卡台</h1>
+    <a class="nav-link" href="./index.html">返回角色图鉴</a>
+</header>
+
+<div class="container">
+    <div class="draw-section">
+        <p class="draw-subtitle">先配置本局角色及数量（支持自定义角色），再点击抽卡区按“背面 → 正面 → 背面 → 下一张”顺序发牌。</p>
+
+        <div class="draw-config-grid">
+            <div class="config-panel">
+                <h3>本局角色设置</h3>
+                <div id="role-config-root"></div>
+            </div>
+
+            <div class="config-panel">
+                <h3>自定义角色</h3>
+                <div class="custom-role-controls">
+                    <input type="text" id="custom-role-name" placeholder="角色名称（如：机械师）">
+                    <input type="number" id="custom-role-count" min="1" value="1">
+                    <button class="action-btn" type="button" onclick="addCustomRole()">添加</button>
+                </div>
+                <ul class="custom-role-list" id="custom-role-list"></ul>
+            </div>
+        </div>
+
+        <div class="draw-actions">
+            <button class="action-btn" type="button" onclick="startDrawSession()">开始随机抽卡</button>
+            <button class="action-btn" type="button" onclick="restoreLastConfig()">一键恢复上局配置</button>
+            <p class="draw-status" id="draw-status">尚未开始抽卡。</p>
+        </div>
+
+        <div class="draw-panel hidden" id="draw-panel">
+            <div class="draw-card" id="draw-card" onclick="handleDrawCardClick()">
+                <div class="draw-card-inner">
+                    <div class="draw-face draw-back">点击查看角色</div>
+                    <div class="draw-face draw-front" id="draw-front-text">角色</div>
+                </div>
+            </div>
+            <p class="draw-status">提示：翻到正面是当前玩家身份，再点一次会翻回背面并推进到下一张。</p>
+        </div>
+    </div>
+</div>
+
+<script src="./roles-data.js"></script>
+<script>
+    const roleTypeMeta = {
+        god: { title: '神职' },
+        villager: { title: '平民' },
+        wolf: { title: '狼人' },
+        third: { title: '第三方' }
+    };
+
+    const STORAGE_KEY = 'langrensha_last_config_v1';
+
+    const customRoles = [];
+    let drawDeck = [];
+    let drawIndex = 0;
+    let drawFrontVisible = false;
+
+    const drawPanel = document.getElementById('draw-panel');
+    const drawCard = document.getElementById('draw-card');
+    const drawFrontText = document.getElementById('draw-front-text');
+    const drawStatus = document.getElementById('draw-status');
+    const roleConfigRoot = document.getElementById('role-config-root');
+    const customRoleList = document.getElementById('custom-role-list');
+
+    function renderRoleConfig() {
+        const grouped = { god: [], villager: [], wolf: [], third: [] };
+        roles.forEach(role => {
+            if (grouped[role.type]) grouped[role.type].push(role);
+        });
+
+        roleConfigRoot.innerHTML = '';
+
+        Object.keys(grouped).forEach(type => {
+            const groupWrap = document.createElement('div');
+            groupWrap.className = 'role-config-group';
+
+            const title = document.createElement('div');
+            title.className = 'role-config-group-title';
+            title.textContent = roleTypeMeta[type].title;
+            groupWrap.appendChild(title);
+
+            const list = document.createElement('div');
+            list.className = 'role-config-list';
+
+            grouped[type].forEach(role => {
+                const item = document.createElement('div');
+                item.className = 'role-config-item';
+                item.innerHTML = `
+                    <label>
+                        <input type="checkbox" class="role-enable" data-role-id="${role.id}">
+                        <span>${role.icon} ${role.name}</span>
+                    </label>
+                    <input type="number" class="role-count-input" data-role-id="${role.id}" min="1" value="1" disabled>
+                `;
+
+                const checkbox = item.querySelector('.role-enable');
+                const countInput = item.querySelector('.role-count-input');
+                checkbox.addEventListener('change', () => {
+                    countInput.disabled = !checkbox.checked;
+                });
+
+                list.appendChild(item);
+            });
+
+            groupWrap.appendChild(list);
+            roleConfigRoot.appendChild(groupWrap);
+        });
+    }
+
+    function addCustomRole() {
+        const nameInput = document.getElementById('custom-role-name');
+        const countInput = document.getElementById('custom-role-count');
+        const name = nameInput.value.trim();
+        const count = Math.max(1, Number(countInput.value) || 1);
+
+        if (!name) {
+            alert('请输入自定义角色名称。');
+            return;
+        }
+
+        customRoles.push({
+            id: `custom_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+            name,
+            icon: '🃏',
+            count
+        });
+
+        nameInput.value = '';
+        countInput.value = '1';
+        renderCustomRoles();
+    }
+
+    function removeCustomRole(index) {
+        customRoles.splice(index, 1);
+        renderCustomRoles();
+    }
+
+    function renderCustomRoles() {
+        customRoleList.innerHTML = '';
+
+        if (customRoles.length === 0) {
+            customRoleList.innerHTML = '<li class="custom-role-item">暂无自定义角色</li>';
+            return;
+        }
+
+        customRoles.forEach((role, index) => {
+            const item = document.createElement('li');
+            item.className = 'custom-role-item';
+            item.innerHTML = `
+                <span>🃏 ${role.name} × ${role.count}</span>
+                <button class="action-btn" type="button" onclick="removeCustomRole(${index})">移除</button>
+            `;
+            customRoleList.appendChild(item);
+        });
+    }
+
+    function getCurrentConfigForSave() {
+        const selectedRoles = [];
+        document.querySelectorAll('.role-enable').forEach(checkbox => {
+            if (!checkbox.checked) return;
+            const roleId = checkbox.dataset.roleId;
+            const countInput = document.querySelector(`.role-count-input[data-role-id="${roleId}"]`);
+            const count = Math.max(1, Number(countInput?.value) || 1);
+            selectedRoles.push({ id: roleId, count });
+        });
+
+        const custom = customRoles.map(role => ({
+            name: role.name,
+            count: Math.max(1, Number(role.count) || 1)
+        }));
+
+        return { selectedRoles, customRoles: custom };
+    }
+
+    function saveCurrentConfig() {
+        const config = getCurrentConfigForSave();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+    }
+
+    function restoreLastConfig() {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+            alert('还没有上局配置，请先完成一次“开始随机抽卡”。');
+            return;
+        }
+
+        try {
+            const config = JSON.parse(raw);
+
+            document.querySelectorAll('.role-enable').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            document.querySelectorAll('.role-count-input').forEach(input => {
+                input.value = '1';
+                input.disabled = true;
+            });
+
+            (config.selectedRoles || []).forEach(item => {
+                const checkbox = document.querySelector(`.role-enable[data-role-id="${item.id}"]`);
+                const countInput = document.querySelector(`.role-count-input[data-role-id="${item.id}"]`);
+                if (!checkbox || !countInput) return;
+                checkbox.checked = true;
+                countInput.disabled = false;
+                countInput.value = Math.max(1, Number(item.count) || 1);
+            });
+
+            customRoles.length = 0;
+            (config.customRoles || []).forEach(item => {
+                if (!item.name) return;
+                customRoles.push({
+                    id: `custom_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+                    name: item.name,
+                    icon: '🃏',
+                    count: Math.max(1, Number(item.count) || 1)
+                });
+            });
+            renderCustomRoles();
+
+            drawStatus.textContent = '已恢复上局配置，可直接开始抽卡。';
+        } catch {
+            alert('上局配置读取失败，请重新配置并开始新一局。');
+        }
+    }
+
+    function collectConfiguredRoles() {
+        const selected = [];
+
+        document.querySelectorAll('.role-enable').forEach(checkbox => {
+            if (!checkbox.checked) return;
+
+            const roleId = checkbox.dataset.roleId;
+            const role = roles.find(r => r.id === roleId);
+            const countInput = document.querySelector(`.role-count-input[data-role-id="${roleId}"]`);
+            const count = Math.max(1, Number(countInput?.value) || 1);
+
+            if (role) {
+                selected.push({ name: role.name, icon: role.icon, count });
+            }
+        });
+
+        customRoles.forEach(role => {
+            selected.push({ name: role.name, icon: role.icon, count: Math.max(1, Number(role.count) || 1) });
+        });
+
+        return selected;
+    }
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    function startDrawSession() {
+        const configuredRoles = collectConfiguredRoles();
+        const nextDeck = [];
+
+        configuredRoles.forEach(role => {
+            for (let i = 0; i < role.count; i++) {
+                nextDeck.push({ name: role.name, icon: role.icon });
+            }
+        });
+
+        if (nextDeck.length === 0) {
+            alert('请至少选择一个角色或添加一个自定义角色。');
+            return;
+        }
+
+        saveCurrentConfig();
+
+        drawDeck = shuffleArray(nextDeck);
+        drawIndex = 0;
+        drawFrontVisible = false;
+
+        drawCard.classList.remove('is-flipped');
+        drawFrontText.textContent = '角色';
+        drawPanel.classList.remove('hidden');
+        updateDrawStatus();
+    }
+
+    function handleDrawCardClick() {
+        if (drawDeck.length === 0) return;
+
+        if (drawFrontVisible) {
+            drawFrontVisible = false;
+            drawIndex += 1;
+            drawCard.classList.remove('is-flipped');
+            updateDrawStatus();
+            return;
+        }
+
+        if (drawIndex >= drawDeck.length) {
+            updateDrawStatus();
+            return;
+        }
+
+        const currentRole = drawDeck[drawIndex];
+        drawFrontText.textContent = `${currentRole.icon} ${currentRole.name}`;
+        drawFrontVisible = true;
+        drawCard.classList.add('is-flipped');
+        updateDrawStatus();
+    }
+
+    function updateDrawStatus() {
+        if (drawDeck.length === 0) {
+            if (!drawStatus.textContent || drawStatus.textContent === '尚未开始抽卡。') {
+                drawStatus.textContent = '尚未开始抽卡。';
+            }
+            return;
+        }
+
+        const total = drawDeck.length;
+        const shown = Math.min(drawIndex, total);
+
+        if (!drawFrontVisible && drawIndex >= total) {
+            drawStatus.textContent = `已抽完全部 ${total} 张卡。可重新配置后再次开始。`;
+            return;
+        }
+
+        if (drawFrontVisible) {
+            drawStatus.textContent = `当前第 ${drawIndex + 1}/${total} 张已翻开，再点一次将翻回背面并进入下一张。`;
+            return;
+        }
+
+        drawStatus.textContent = `已完成 ${shown}/${total} 张。点击卡牌翻开下一张。`;
+    }
+
+    renderRoleConfig();
+    renderCustomRoles();
+</script>
+</body>
+</html>

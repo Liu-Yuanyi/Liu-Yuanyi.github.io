@@ -287,6 +287,17 @@
             background: rgba(255,255,255,0.18);
         }
 
+        .mini-btn.icon-btn {
+            min-width: 28px;
+            height: 28px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9em;
+            line-height: 1;
+        }
+
         .all-result-list {
             list-style: none;
             margin: 0;
@@ -325,6 +336,7 @@
             display: flex;
             gap: 6px;
             margin-left: auto;
+            flex-shrink: 0;
         }
 
         .removed-block {
@@ -855,15 +867,19 @@
             actions.className = 'row-actions';
 
             const markBtn = document.createElement('button');
-            markBtn.className = 'mini-btn';
+            markBtn.className = 'mini-btn icon-btn';
             markBtn.type = 'button';
-            markBtn.textContent = state.marked ? '取消删除线' : '加删除线';
+            markBtn.textContent = state.marked ? '↺' : 'S̶';
+            markBtn.title = state.marked ? '取消删除线' : '加删除线';
+            markBtn.setAttribute('aria-label', state.marked ? '取消删除线' : '加删除线');
             markBtn.onclick = () => toggleMark(playerNo);
 
             const removeBtn = document.createElement('button');
-            removeBtn.className = 'mini-btn';
+            removeBtn.className = 'mini-btn icon-btn';
             removeBtn.type = 'button';
-            removeBtn.textContent = '删除玩家';
+            removeBtn.textContent = '✖';
+            removeBtn.title = '删除玩家';
+            removeBtn.setAttribute('aria-label', '删除玩家');
             removeBtn.onclick = () => setPlayerRemoved(playerNo, true);
 
             actions.appendChild(markBtn);
@@ -891,9 +907,11 @@
                 removedActions.className = 'row-actions';
 
                 const restoreBtn = document.createElement('button');
-                restoreBtn.className = 'mini-btn';
+                restoreBtn.className = 'mini-btn icon-btn';
                 restoreBtn.type = 'button';
-                restoreBtn.textContent = '恢复玩家';
+                restoreBtn.textContent = '↩';
+                restoreBtn.title = '恢复玩家';
+                restoreBtn.setAttribute('aria-label', '恢复玩家');
                 restoreBtn.onclick = () => setPlayerRemoved(playerNo, false);
 
                 removedActions.appendChild(restoreBtn);

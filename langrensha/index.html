@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>狼人杀角色图鉴 - 进阶版</title>
+    <style>
+        :root {
+            --primary-bg: #1a1a2e;
+            --card-bg: #16213e;
+            --text-color: #e94560;
+            --good-Color: #4ecca3;
+            --god-color: #ffd700;
+            --wolf-color: #e94560;
+            --third-color: #a64ac9;
+            --modal-bg: rgba(0, 0, 0, 0.85);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--primary-bg);
+            color: #fff;
+            line-height: 1.6;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2.5em;
+            letter-spacing: 2px;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+
+        p.subtitle {
+            color: #bbb;
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+        .jump-link {
+            display: inline-block;
+            margin-top: 12px;
+            color: #ddd;
+            text-decoration: none;
+            padding: 7px 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+        }
+
+        .jump-link:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .faction-section {
+            margin-bottom: 50px;
+        }
+
+        .faction-title {
+            border-left: 5px solid;
+            padding-left: 15px;
+            margin-bottom: 25px;
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+        }
+
+        .faction-good { border-color: var(--good-Color); color: var(--good-Color); }
+        .faction-god { border-color: var(--god-color); color: var(--god-color); }
+        .faction-wolf { border-color: var(--wolf-color); color: var(--wolf-color); }
+        .faction-third { border-color: var(--third-color); color: var(--third-color); }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 20px;
+        }
+
+        .role-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .role-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        .role-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .role-name {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--modal-bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: #252a34;
+            padding: 40px;
+            border-radius: 15px;
+            max-width: 600px;
+            width: 90%;
+            position: relative;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.8);
+            transform: scale(0.7);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #aaa;
+            background: none;
+            border: none;
+        }
+
+        .close-btn:hover {
+            color: #fff;
+        }
+
+        .modal-title {
+            margin-top: 0;
+            color: var(--god-color);
+            font-size: 2em;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .modal-section-title {
+            font-size: 1.2em;
+            color: #ddd;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            border-left: 3px solid #e94560;
+            padding-left: 10px;
+        }
+
+        .skill-desc {
+            font-size: 1.05em;
+            line-height: 1.8;
+            color: #eee;
+        }
+
+        .rule-list {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .rule-list li {
+            background: rgba(255,255,255,0.05);
+            margin-bottom: 8px;
+            padding: 10px;
+            border-radius: 6px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .rule-list li::before {
+            content: "💡";
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+
+        .modal-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .nav-btn {
+            background-color: rgba(255,255,255,0.1);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-btn:hover {
+            background-color: var(--text-color);
+            border-color: var(--text-color);
+            transform: translateY(-2px);
+        }
+
+        .tag {
+            font-size: 0.6em;
+            padding: 2px 8px;
+            border-radius: 4px;
+            vertical-align: middle;
+            margin-left: 10px;
+            background: #444;
+            color: #fff;
+            font-weight: normal;
+        }
+
+        @media (max-width: 600px) {
+            .cards-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            h1 { font-size: 1.8em; }
+            .modal-content { padding: 25px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>🐺 狼人杀角色进阶图鉴</h1>
+    <p class="subtitle">具体细则以法官为准</p>
+    <a class="jump-link" href="./draw.html">进入抽卡台</a>
+</header>
+
+<div class="container">
+    <div class="faction-section">
+        <h2 class="faction-title faction-god">好人阵营 · 神职</h2>
+        <div class="cards-grid" id="god-cards"></div>
+    </div>
+
+    <div class="faction-section">
+        <h2 class="faction-title faction-good">好人阵营 · 平民</h2>
+        <div class="cards-grid" id="villager-cards"></div>
+    </div>
+
+    <div class="faction-section">
+        <h2 class="faction-title faction-wolf">坏人阵营 (狼人)</h2>
+        <div class="cards-grid" id="wolf-cards"></div>
+    </div>
+
+    <div class="faction-section">
+        <h2 class="faction-title faction-third">第三方 / 特殊身份</h2>
+        <div class="cards-grid" id="third-cards"></div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal">
+    <div class="modal-content">
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+        <h2 class="modal-title" id="m-title">角色名称</h2>
+
+        <div class="modal-section-title">技能概要</div>
+        <div class="skill-desc" id="m-desc"></div>
+
+        <div class="modal-section-title">进阶判例 & 规则细节</div>
+        <ul class="rule-list" id="m-rules"></ul>
+
+        <div class="modal-nav">
+            <button class="nav-btn" id="prevRole" onclick="navigateRole(-1)">
+                <span>←</span>
+                <span id="prev-name">上一个</span>
+            </button>
+            <button class="nav-btn" id="nextRole" onclick="navigateRole(1)">
+                <span id="next-name">下一个</span>
+                <span>→</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="./roles-data.js"></script>
+<script>
+    function renderCards() {
+        const sections = {
+            god: document.getElementById('god-cards'),
+            villager: document.getElementById('villager-cards'),
+            wolf: document.getElementById('wolf-cards'),
+            third: document.getElementById('third-cards')
+        };
+
+        roles.forEach(role => {
+            const card = document.createElement('div');
+            card.className = 'role-card';
+            card.onclick = () => openModal(role);
+
+            card.innerHTML = `
+                <span class="role-icon">${role.icon}</span>
+                <div class="role-name">${role.name}</div>
+            `;
+
+            if (sections[role.type]) {
+                sections[role.type].appendChild(card);
+            }
+        });
+    }
+
+    const modal = document.getElementById('modal');
+    const mTitle = document.getElementById('m-title');
+    const mDesc = document.getElementById('m-desc');
+    const mRules = document.getElementById('m-rules');
+
+    let currentRoleIndex = -1;
+
+    function openModal(role) {
+        currentRoleIndex = roles.findIndex(r => r.id === role.id);
+        updateModalContent();
+        modal.classList.add('active');
+    }
+
+    function updateModalContent() {
+        const role = roles[currentRoleIndex];
+
+        mTitle.innerHTML = `${role.icon} ${role.name} <span class="tag" style="background:${getFactionColor(role.type)}">${getFactionName(role.type)}</span>`;
+        mTitle.style.color = getFactionColor(role.type);
+        mDesc.textContent = role.desc;
+
+        mRules.innerHTML = '';
+        if (role.rules && role.rules.length > 0) {
+            role.rules.forEach(rule => {
+                const li = document.createElement('li');
+                li.textContent = rule;
+                mRules.appendChild(li);
+            });
+        } else {
+            mRules.innerHTML = '暂无';
+        }
+
+        updateNavButtons();
+    }
+
+    function updateNavButtons() {
+        const prevIndex = (currentRoleIndex - 1 + roles.length) % roles.length;
+        const nextIndex = (currentRoleIndex + 1) % roles.length;
+
+        document.getElementById('prev-name').textContent = roles[prevIndex].name;
+        document.getElementById('next-name').textContent = roles[nextIndex].name;
+    }
+
+    function navigateRole(direction) {
+        currentRoleIndex = (currentRoleIndex + direction + roles.length) % roles.length;
+        updateModalContent();
+    }
+
+    function closeModal() {
+        modal.classList.remove('active');
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (!modal.classList.contains('active')) return;
+
+        if (e.key === 'ArrowLeft') navigateRole(-1);
+        if (e.key === 'ArrowRight') navigateRole(1);
+        if (e.key === 'Escape') closeModal();
+    });
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+
+    function getFactionColor(type) {
+        switch(type) {
+            case 'god': return '#ffd700';
+            case 'villager': return '#4ecca3';
+            case 'wolf': return '#e94560';
+            case 'third': return '#a64ac9';
+            default: return '#fff';
+        }
+    }
+
+    function getFactionName(type) {
+        switch(type) {
+            case 'god': return '神职';
+            case 'villager': return '平民';
+            case 'wolf': return '狼人';
+            case 'third': return '第三方';
+            default: return '未知';
+        }
+    }
+
+    renderCards();
+</script>
+
+</body>
+</html>

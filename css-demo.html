@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS 基础示例</title>
+    <style>
+        /* 全局样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: '微软雅黑', Arial, sans-serif;
+            background-color: #f5f5f5;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        /* 容器样式 */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+
+        /* 标题样式 */
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 15px;
+        }
+
+        h2 {
+            color: #4CAF50;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        /* 段落样式 */
+        p {
+            color: #666;
+            margin-bottom: 15px;
+            text-indent: 2em;
+        }
+
+        /* 列表样式 */
+        ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        li {
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        /* 按钮样式 */
+        .btn {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+            text-decoration: none;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            background-color: #45a049;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        /* 区域框样式 */
+        .box {
+            background-color: #e8f5e9;
+            border-left: 4px solid #4CAF50;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .box.warning {
+            background-color: #fff3e0;
+            border-left-color: #ff9800;
+        }
+
+        .box.danger {
+            background-color: #ffebee;
+            border-left-color: #f44336;
+        }
+
+        /* 网格布局示例 */
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .grid-item {
+            background-color: #f0f0f0;
+            padding: 20px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .grid-item h3 {
+            color: #4CAF50;
+            margin-bottom: 10px;
+        }
+
+        /* 代码样式 */
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #d63384;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .grid-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CSS 基础功能展示</h1>
+
+        <h2>1. 文本和颜色</h2>
+        <p>这是一个段落示例，展示了文本的颜色、字体和行高样式。你可以看到段落有缩进、居中对齐和特定的颜色。</p>
+
+        <h2>2. 按钮样式</h2>
+        <button class="btn">普通按钮</button>
+        <button class="btn" style="background-color: #2196F3;">蓝色按钮</button>
+        <p style="font-size: 12px; margin-top: 10px;">✓ 悬停效果：将鼠标放在按钮上试试</p>
+
+        <h2>3. 盒子/警告框</h2>
+        <div class="box">
+            <strong>✓ 成功信息：</strong>这是一个绿色的提示框，表示成功状态。
+        </div>
+
+        <div class="box warning">
+            <strong>⚠ 警告信息：</strong>这是一个黄色的警告框，提醒用户注意。
+        </div>
+
+        <div class="box danger">
+            <strong>✗ 错误信息：</strong>这是一个红色的错误框，表示发生了问题。
+        </div>
+
+        <h2>4. 列表样式</h2>
+        <ul>
+            <li>CSS 可以控制字体大小和颜色</li>
+            <li>CSS 可以创建响应式布局</li>
+            <li>CSS 支持动画和过渡效果</li>
+            <li>CSS 使用选择器精准定位元素</li>
+        </ul>
+
+        <h2>5. 网格布局</h2>
+        <div class="grid-container">
+            <div class="grid-item">
+                <h3>🎨 设计</h3>
+                <p>美化网页外观</p>
+            </div>
+            <div class="grid-item">
+                <h3>⚙️ 功能</h3>
+                <p>实现交互效果</p>
+            </div>
+        </div>
+
+        <h2>6. 代码示例</h2>
+        <p>CSS 的基本语法是：<code>选择器 { 属性: 值; }</code>，例如：</p>
+        <div class="box">
+            <code>p { color: #333; font-size: 16px; }</code>
+        </div>
+
+        <h2>7. CSS 的主要优势</h2>
+        <ul>
+            <li><strong>分离</strong>：将样式与 HTML 结构分离</li>
+            <li><strong>维护</strong>：修改样式只需改动 CSS 文件</li>
+            <li><strong>效率</strong>：可以复用样式规则</li>
+            <li><strong>响应式</strong>：支持多设备自适应</li>
+            <li><strong>动画</strong>：支持过渡和动画效果</li>
+        </ul>
+
+        <p style="text-align: center; color: #999; margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee;">
+            👨‍💻 打开浏览器开发者工具 (F12) 可以查看和修改 CSS
+        </p>
+    </div>
+</body>
+</html>

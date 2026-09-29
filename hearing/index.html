@@ -1,0 +1,1047 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="robots" content="noindex,nofollow" />
+<title>音程听力训练</title>
+<link rel="icon" href="/logo.svg" type="image/svg+xml" />
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1b2230; --line:#28303e;
+    --fg:#e6edf3; --muted:#8b96a5; --accent:#58a6ff;
+    --good:#3fb950; --bad:#f85149;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none !important}
+  body{
+    margin:0; min-height:100vh; color:var(--fg);
+    background:radial-gradient(1100px 560px at 50% -12%, #1a2432, #0d1117 70%) fixed;
+    font:15px/1.65 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+    display:flex; justify-content:center; padding:26px 16px 64px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{width:min(720px,100%)}
+  header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px}
+  h1{font-size:19px;margin:0;letter-spacing:.02em}
+  .sub{color:var(--muted);font-size:13px;margin-top:2px}
+
+  button{font:inherit;cursor:pointer;border-radius:10px;transition:.14s;border:1px solid transparent}
+  button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  button:disabled{opacity:.4;cursor:default}
+  .ghost{background:transparent;border-color:var(--line);color:var(--muted);padding:7px 12px;font-size:13px}
+  .ghost:hover:not(:disabled){color:var(--fg);border-color:#3d4757}
+  .back{flex:0 0 auto;color:var(--muted);text-decoration:none;font-size:13px;
+        border:1px solid var(--line);border-radius:10px;padding:7px 12px;transition:.14s}
+  .back:hover{color:var(--fg);border-color:#3d4757}
+
+  .tip{display:flex;align-items:flex-start;gap:9px;margin-bottom:14px;padding:10px 13px;
+       background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.32);
+       border-radius:12px;color:#a9c8ee;font-size:13px;line-height:1.6}
+  .tip .ico{flex:0 0 auto;font-size:15px;line-height:1.35}
+  .tip b{color:var(--fg);font-weight:600}
+  .tabs{display:flex;gap:6px;background:var(--panel);padding:6px;border-radius:12px;border:1px solid var(--line);margin-bottom:14px}
+  .tabs + .tabs{margin-top:-8px}                      /* 两行标签之间收紧一点 */
+  .tabs.lens .tab{font-weight:500;font-size:13px;padding:8px}
+  .tab{flex:1;padding:10px;background:transparent;color:var(--muted);font-weight:600}
+  .tab:hover{color:var(--fg)}
+  .tab.on{background:var(--panel2);color:var(--fg);box-shadow:inset 0 0 0 1px var(--line)}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
+
+  .hud{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px}
+  .hud-item{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+  .hud-item .k{display:block;font-size:11px;color:var(--muted);letter-spacing:.06em}
+  .hud-item b{display:block;font-size:15px;font-variant-numeric:tabular-nums;white-space:nowrap;
+              overflow:hidden;text-overflow:ellipsis}
+  .hud-item.hi b{color:var(--accent)}
+
+  .prompt{text-align:center;color:var(--muted);font-size:14px;margin:0 0 18px;min-height:22px}
+
+  .btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .ans{padding:20px 12px;font-size:16px;font-weight:600;color:var(--fg);
+       background:var(--panel2);border:1px solid var(--line)}
+  .ans:hover:not(:disabled){border-color:var(--accent);background:#202a3c}
+  .ans:disabled{cursor:default}
+  .ans.right{background:rgba(63,185,80,.14);border-color:var(--good);color:var(--good)}
+  .ans.wrong{background:rgba(248,81,73,.12);border-color:var(--bad);color:var(--bad)}
+  .ans.picked{box-shadow:inset 0 0 0 1px currentColor}
+
+  .big{width:100%;padding:22px;font-size:16px;font-weight:600;color:#0d1117;
+       background:linear-gradient(180deg,#7cb8ff,#58a6ff);border:0}
+  .big:hover{filter:brightness(1.08)}
+
+  kbd{font:11px/1 ui-monospace,Consolas,monospace;background:rgba(127,127,127,.18);
+      border:1px solid var(--line);border-radius:5px;padding:3px 5px;margin-left:6px;color:var(--muted)}
+
+  .row{display:flex;gap:8px;justify-content:center;align-items:center;margin-top:16px;flex-wrap:wrap}
+  .pager{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;
+         min-width:104px;text-align:center;padding:0 2px}
+  .pager b{color:var(--fg);font-weight:600}
+
+  .feedback{margin-top:14px;text-align:center;font-size:14px;min-height:24px}
+  .feedback.ok{color:var(--good)}
+  .feedback.no{color:var(--bad)}
+  .feedback em{font-style:normal;color:var(--muted)}
+
+  .chart{display:flex;flex-direction:column;align-items:center;margin-top:10px}
+  .chart svg{max-width:100%}
+  .cap{font-size:11px;color:#5b6675;margin-top:2px;text-align:center}
+
+  .verdict{text-align:center;padding:6px 0 4px}
+  .verdict .vlabel{font-size:13px;color:var(--muted);letter-spacing:.03em}
+  .verdict .vvalue{font-size:44px;font-weight:700;line-height:1.25;font-variant-numeric:tabular-nums}
+  .verdict .vvalue b{color:var(--accent)}
+  .verdict .vvalue span{font-size:18px;font-weight:500;color:var(--muted);margin-left:4px}
+  .verdict .vsub{font-size:13px;color:var(--muted);margin-top:2px}
+  .verdict .vtag{display:inline-block;margin-top:10px;padding:5px 12px;border-radius:999px;
+                 font-size:13px;background:var(--panel2);border:1px solid var(--line)}
+  .legend{display:flex;gap:16px;justify-content:center;font-size:12px;color:var(--muted);margin-top:6px;flex-wrap:wrap}
+  .legend i{font-style:normal}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
+  .sect{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);
+        font-size:12px;color:var(--muted);text-align:center;letter-spacing:.03em}
+
+  .settings{display:flex;flex-wrap:wrap;gap:22px;margin-top:16px;padding:0 4px;
+            color:var(--muted);font-size:13px;align-items:center}
+  .settings label{display:flex;align-items:center;gap:9px}
+  input[type=range]{width:130px;accent-color:var(--accent)}
+  select{background:var(--panel2);color:var(--fg);border:1px solid var(--line);
+         border-radius:8px;padding:6px 9px;font:inherit;font-size:13px}
+
+  details{margin-top:18px;color:var(--muted);font-size:13px;line-height:1.75}
+  summary{cursor:pointer;padding:6px 4px}
+  summary:hover{color:var(--fg)}
+  details p{margin:8px 0}
+  details b{color:var(--fg);font-weight:600}
+  details code{background:var(--panel2);padding:1px 5px;border-radius:4px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>音程听力训练</h1>
+      <div class="sub">用耳朵比较音高 · 比较音程跨度</div>
+    </div>
+    <a class="back" href="/">← 返回主页</a>
+  </header>
+
+  <div class="tip">
+    <span class="ico" aria-hidden="true">🎧</span>
+    <span>建议<b>佩戴耳机</b>，并在安静的环境下测试。外放时环境噪声、音箱频响和左右耳串音
+      都会明显使测试结果偏高。</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" data-mode="1">① 哪个音更高</button>
+    <button class="tab"    data-mode="2">② 哪个音程更大</button>
+  </div>
+
+  <div class="tabs lens">
+    <button class="tab" data-len="quick"></button>
+    <button class="tab" data-len="standard"></button>
+    <button class="tab" data-len="strict"></button>
+  </div>
+
+  <section class="panel">
+    <div class="hud">
+      <div class="hud-item"><span class="k">进度</span><b id="hudProg">—</b></div>
+      <div class="hud-item"><span class="k">本题</span><b id="hudCur">—</b></div>
+      <div class="hud-item hi"><span class="k">实时估计</span><b id="hudEst">—</b></div>
+      <div class="hud-item"><span class="k">正确率</span><b id="hudAcc">—</b></div>
+    </div>
+
+    <p class="prompt" id="prompt">听两个音，判断哪一个更高。</p>
+
+    <div id="stage">
+      <button id="startBtn" class="big">▶ 开始本轮测试</button>
+
+      <div id="result" hidden></div>
+
+      <div id="answers" hidden>
+        <div class="btns" id="btns1">
+          <button class="ans" data-choice="a">第一个更高 <kbd>←</kbd><kbd>1</kbd></button>
+          <button class="ans" data-choice="b">第二个更高 <kbd>→</kbd><kbd>2</kbd></button>
+        </div>
+        <div class="btns" id="btns2" hidden>
+          <button class="ans" data-choice="a">第一个更大 <kbd>←</kbd><kbd>1</kbd></button>
+          <button class="ans" data-choice="b">第二个更大 <kbd>→</kbd><kbd>2</kbd></button>
+        </div>
+      </div>
+
+      <div class="row" id="row" hidden>
+        <button id="prev" class="ghost">◀ 上一题</button>
+        <span class="pager" id="pager">—</span>
+        <button id="next" class="ghost">下一题 ▶</button>
+        <button id="replay" class="ghost">↻ 再听 <kbd>空格</kbd></button>
+        <button id="quit" class="ghost">放弃</button>
+      </div>
+
+      <div class="feedback" id="feedback"></div>
+      <div class="chart" id="chart"></div>
+    </div>
+  </section>
+
+  <section class="settings">
+    <label>音量 <input type="range" id="vol" min="0" max="1" step="0.01" value="0.28"></label>
+    <label>音色
+      <select id="timbre">
+        <option value="sine">纯音（正弦波）</option>
+        <option value="triangle">柔和（三角波）</option>
+        <option value="sawtooth">明亮（锯齿波）</option>
+      </select>
+    </label>
+  </section>
+
+  <details>
+    <summary>玩法与说明</summary>
+    <p><b>模式 ①</b>：两个音先后响起，判断<b>哪一个更高</b>。先响的是高是低随机，顺序不提供线索。</p>
+    <p><b>模式 ②</b>：两组音程先后响起，判断<b>哪一组跨度更大</b>，也就是比较两对频率的
+       <b>对数差的绝对值</b>。两组<b>都是上行</b>，而且两个起始音之间至少拉开 <b>500 音分</b>（纯四度）——
+       起始音挨得太近时，两组第二个音的高低顺序会和跨度顺序一致，题目就退化成模式①了。</p>
+    <p><b>回看</b>：答完一题后会用 <b>◀ 上一题 / 下一题 ▶</b> 翻页，随时回看前面任意一题的
+       音高图和答案，也可以对回看中的那一题<b>重新播放</b>。翻页会暂停自动出下一题，看完点「下一题 ▶」继续。</p>
+    <p><b>难度怎么定</b>：不是固定的"答对就收窄"阶梯，而是<b>贝叶斯自适应测试</b>（Best PEST / QUEST 一类的做法）。
+       程序对"你的阈限是多少"维护一个概率分布，每答一题就用结果更新它，然后把下一题的差距放在当前估计值上 ——
+       所以它会很快逼近你的真实水平，并在附近反复试探，而不是一条直线收窄。</p>
+    <p><b>题量</b>：<b>快速</b> 10 / 7 题，<b>标准</b> 30 / 20 题，<b>严谨</b> 50 / 30 题（分别是模式① / 模式②）。
+       题量直接决定可信区间的宽窄 —— <b>快速模式只是先摸个大概</b>，10 题估出来的区间会相当宽，
+       不要拿它当结论；要下结论请用标准或严谨。中途换档本轮作废，需要重新开始。</p>
+    <p><b>结果怎么读</b>：阈限定在 <b>75% 正确率</b>（二选一任务的经典口径，答对率降到 75% 时的音分差）。
+       报告的是后验中位数和 90% 可信区间 —— <b>请重点看区间，别只盯着那个数字</b>。
+       题量越少区间越宽，属正常，不是测坏了。</p>
+    <p><b>音分（cent）</b>：音程的通用度量单位，1 个半音 = 100 音分，
+       <code>音分 = 1200 × log₂(f₂ / f₁)</code>。所以"频率的对数差"用音分表达就是音程的大小。</p>
+    <p><b>纵轴</b>：音名用科学音高记号法（A4 = 440 Hz，中央 C = C4）。纵轴范围随题目自适应 ——
+       两个音差得远时显示一两个八度，差得只有几音分时就缩到一个半音以内，否则那么小的差距根本看不出来。
+       标注形如 <code>A♯3 +32¢</code> 表示"比 A♯3 高 32 音分"。</p>
+    <p><b>为什么音区每次都在变</b>：每次测试的音高中心都是随机的。如果不随机，你可以靠绝对音高记忆作答，
+       测的就不是分辨力了 —— 代价是难度比固定音区要高。</p>
+    <p><b>成绩记录</b>：每轮测完会匿名收集数据，包含 —— 
+       模式、最终估值、逐题明细，以及这次请求自带的IP 与浏览器标识。没有姓名、没有账号、没有 cookie、没有设备指纹，也不会跨站追踪你。记录之间无法拼出"你是谁"。收集到的 IP 只用于汇总地域分布，不对外提供，也不用于任何商业用途。</p>
+  </details>
+
+</div>
+
+<script>
+/* ===================== 常量 ===================== */
+const NOTE_DUR = 0.36;    // 单音时长（秒）
+const GAP      = 0.13;    // 音程内两音的间隔
+const PAIR_GAP = 0.72;    // 模式②中两组音程之间的停顿
+
+// 每轮题数。题数直接决定后验可信区间的宽度，所以给三档：
+// 快速先摸个大概，要下结论就用严谨。顺序即界面上的顺序，第一项是默认。
+const LENGTHS = {
+  quick:    { name: '快速', n: { 1: 10, 2: 7  } },
+  standard: { name: '标准', n: { 1: 30, 2: 20 } },
+  strict:   { name: '严谨', n: { 1: 50, 2: 30 } },
+};
+let lenKey = 'quick';                    // 默认快速；初始化时会被用户上次的选择覆盖
+const trialsN = () => LENGTHS[lenKey].n[S.mode];
+const lastKey = () => S.mode + '-' + lenKey;   // 上次成绩按"模式+长度"分别记
+
+const FIRST_DELTA = { 1: 700, 2: 600 };  // 第一题的差距（音分），先给一个容易的锚点
+
+
+const UPLOAD = {
+  url:   'https://pluutmdsgzytjibltoyv.supabase.co',
+  key:   'sb_publishable_YH6RCo1Uo8bqCgrpUTcr4Q_lptIBD7W',
+  table: 'results',
+};
+const uploadOn = () => !!(UPLOAD.url && UPLOAD.key);
+
+// 模式② 两个音程起始音之间的最小间隔（音分）。
+// 两组都是上行时，如果起始音挨得太近，两组第二个音的高低顺序就和跨度顺序一致，
+// "哪一组跨度更大"会退化成"哪个第二个音更高" —— 等于在考模式①。
+// 拉开到 500 音分（纯四度）后，第二个音的高低由起始音差主导，这个偷懒策略的正确率
+// 掉回 50%（随机水平），必须真的比较跨度才答得对。
+// 顺带一个好处：只要 d < 500，两组第二个音也自动不会重合。
+const M2_MIN_START_GAP = 500;
+
+/* 贝叶斯自适应估计器的参数 */
+const MU_LO = 2, MU_HI = 800, MU_N = 90;     // 阈限搜索范围（音分）与格点数
+// 心理测量函数斜率（log10 音分单位），一起边缘化掉。
+// 集合放宽到 0.65 是刻意的：真实斜率比假设缓得多时，收窄的集合会给出虚窄的可信区间。
+// 蒙特卡洛显示取 {0.06…0.65} 后，真斜率 0.15/0.35/0.60 三种情况的实际覆盖率
+// 分别为 98%/90%/75%（若只取到 0.26 则掉到 93%/71%/53%）。
+const SLOPES = [0.06, 0.10, 0.16, 0.26, 0.42, 0.65];
+const LAPSE  = 0.02;                         // 失误率：允许偶尔手滑，避免一次误按把估计带飞
+
+const el = id => document.getElementById(id);
+const rnd = () => Math.random() - 0.5;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const fmtC = c => c < 10 ? c.toFixed(1) : String(Math.round(c));
+
+/* ===================== 音高 / 音名 ===================== */
+const NOTE_NAMES = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
+const freqToMidi = f => 69 + 12 * Math.log2(f / 440);          // A4 = 440 Hz = MIDI 69
+
+function midiToName(m) {
+  const r = Math.round(m);
+  return NOTE_NAMES[((r % 12) + 12) % 12] + (Math.floor(r / 12) - 1);
+}
+
+// 带偏差的音名：58.32 -> "A♯3 +32¢"，58.00 -> "A♯3"。
+// 一律走这个函数，不要再直接把值喂给 midiToName —— 传错单位会静默产出 "D23" 这种垃圾。
+function midiLabel(m) {
+  const r = Math.round(m);
+  const dev = Math.round((m - r) * 100);
+  if (Math.abs(dev) < 1) return midiToName(r);
+  return midiToName(r) + (dev > 0 ? ` +${dev}¢` : ` ${dev}¢`);
+}
+
+/* ===================== 纵轴自适应 ===================== */
+// 可用的网格步长（单位：半音），从粗到细
+const STEP_LADDER = [30, 24, 12, 6, 3, 2, 1, 0.5, 0.25, 0.1, 0.05, 0.02, 0.01];
+
+// 纵轴范围：让音符占据约 55% 的高度，但整轴跨度不小于 40 音分 ——
+// 否则两个音只差 5 音分时会被放大到满屏，视觉上严重失真。
+// 范围再对齐到"整齐"的位置：跨度 >= 1 个半音时对齐到半音，否则对齐到 5 音分。
+function axisFor(midis) {
+  const lo = Math.min(...midis), hi = Math.max(...midis);
+  const raw = Math.max((hi - lo) / 0.55, 0.40);
+  const snap = raw >= 1 ? 0.5 : 0.05;
+  const span = Math.ceil(raw / snap) * snap;
+  const mid = (lo + hi) / 2;
+  const a = Math.round((mid - span / 2) / snap) * snap;
+  return [a, a + span];
+}
+
+// 网格步长：在能产生 4~12 条线的候选里取最细的那个
+function gridStep(span) {
+  const ok = STEP_LADDER.filter(s => span / s >= 4 && span / s <= 12);
+  return ok.length ? ok[ok.length - 1] : 1;
+}
+
+/* ===================== 设置 ===================== */
+let prefs = { vol: 0.28, timbre: 'sine', len: 'quick' };
+try { Object.assign(prefs, JSON.parse(localStorage.getItem('hearing-trainer') || '{}')); } catch (e) {}
+if (!LENGTHS[prefs.len]) prefs.len = 'quick';   // 挡住旧版本残留或手改出来的脏值
+const savePrefs = () => { try { localStorage.setItem('hearing-trainer', JSON.stringify(prefs)); } catch (e) {} };
+
+/* ===================== 音频 ===================== */
+let ac = null, master = null, lp = null;
+
+function initAudio() {
+  if (ac) return ac;
+  ac = new (window.AudioContext || window.webkitAudioContext)();
+  lp = ac.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 5200;               // 削掉锯齿波的刺耳高频
+  master = ac.createGain();
+  master.gain.value = prefs.vol;
+  lp.connect(master).connect(ac.destination);
+  return ac;
+}
+
+function tone(freq, at, dur) {
+  const osc = ac.createOscillator(), g = ac.createGain();
+  osc.type = prefs.timbre;
+  osc.frequency.value = freq;
+  const a = 0.015, r = 0.06;               // 淡入淡出，避免爆音
+  g.gain.setValueAtTime(0, at);
+  g.gain.linearRampToValueAtTime(1, at + a);
+  g.gain.setValueAtTime(1, at + Math.max(a + 0.005, dur - r));
+  g.gain.linearRampToValueAtTime(0, at + dur);
+  osc.connect(g).connect(lp);
+  osc.start(at);
+  osc.stop(at + dur + 0.02);
+}
+
+// steps: [{ f: 频率, d: 时长, rest: 之后静默 }]
+function schedule(steps) {
+  initAudio();
+  if (ac.state === 'suspended') ac.resume();
+  let t = ac.currentTime + 0.09;
+  for (const s of steps) { tone(s.f, t, s.d); t += s.d + s.rest; }
+}
+
+/* ===================== 贝叶斯自适应估计器 ===================== */
+const MU_GRID = (() => {
+  const a = Math.log10(MU_LO), b = Math.log10(MU_HI);
+  return Array.from({ length: MU_N }, (_, i) => a + (b - a) * i / (MU_N - 1));
+})();
+
+// 二选一强迫选择（2AFC）的心理测量函数：猜对基线 0.5，上限 0.5+0.5(1-λ)
+// 自变量是 log10(差距)，参数是 log10(阈限) 与斜率
+function pCorrect(logDelta, logMu, s) {
+  return 0.5 + 0.5 * (1 - LAPSE) / (1 + Math.exp(-(logDelta - logMu) / s));
+}
+
+// 曲线中点 μ 落在 0.5+0.5(1-λ)×0.5 = 74.5% 处，不是正好 75%。
+// 真正 75% 对应的差距是 μ·10^(s·Z75)，报数时按这个换算，保证"75% 正确率"名副其实。
+const SIG75 = 0.5 / (1 - LAPSE);
+const Z75   = Math.log(SIG75 / (1 - SIG75));
+
+class Bayes {
+  constructor() {
+    this.w = MU_GRID.map(() => SLOPES.map(() => 1));   // 均匀先验
+    this.norm();
+    this.trials = [];                                   // [{ delta, correct }]
+  }
+  norm() {
+    let sum = 0;
+    for (const row of this.w) for (const v of row) sum += v;
+    if (sum > 0) for (const row of this.w) for (let j = 0; j < row.length; j++) row[j] /= sum;
+  }
+  update(delta, correct) {
+    const ld = Math.log10(delta);
+    for (let i = 0; i < MU_GRID.length; i++) {
+      for (let j = 0; j < SLOPES.length; j++) {
+        const p = pCorrect(ld, MU_GRID[i], SLOPES[j]);
+        this.w[i][j] *= correct ? p : 1 - p;
+      }
+    }
+    this.norm();
+    this.trials.push({ delta, correct });
+  }
+  // 75% 正确率阈限分布的 p 分位数。
+  // 注意是对 {(μ_i, s_j) → 精确的 75% 点} 这一组值取分位数，而不是对 μ 取完分位数再换算 ——
+  // 换算量依赖斜率，先取分位数再换算会引入偏差。
+  q(p) {
+    const cells = [];
+    for (let i = 0; i < MU_GRID.length; i++) {
+      for (let j = 0; j < SLOPES.length; j++) {
+        const w = this.w[i][j];
+        if (w > 0) cells.push([Math.pow(10, MU_GRID[i] + SLOPES[j] * Z75), w]);
+      }
+    }
+    cells.sort((a, b) => a[0] - b[0]);
+    let acc = 0;
+    for (const [t, w] of cells) { acc += w; if (acc >= p) return t; }
+    return cells[cells.length - 1][0];
+  }
+  get median() { return this.q(0.5); }
+  get ci()     { return [this.q(0.05), this.q(0.95)]; }
+  get acc()    { return this.trials.length ? this.trials.filter(t => t.correct).length / this.trials.length : 0; }
+}
+
+/* ===================== 状态 ===================== */
+const S = {
+  mode: 1,
+  phase: 'idle',        // idle | testing | done
+  bayes: null,
+  trial: null,          // 当前未作答的题
+  locked: false,        // 已作答、等待自动进入下一题
+  history: [],          // [{ groups, delta, answer, chosen, correct }]
+  view: null,           // null = 显示当前题；数字 = 显示 history 中该下标（回看）
+  last: { 1: null, 2: null },
+};
+let advanceTimer = null;
+
+/* ===================== 出题 ===================== */
+const PITCH_LO = 250, PITCH_SPAN = 1.05;         // 舒适音区 250–519 Hz（PITCH_SPAN 单位：八度）
+const randCenter = () => PITCH_LO * Math.pow(2, Math.random() * PITCH_SPAN);
+
+// 以 center 为几何中心，生成跨度 cents 音分、方向 dir 的两音序列
+function makePair(center, cents, dir) {
+  const half = cents / 2400;                        // 半跨度（单位：八度）
+  const lo = center * Math.pow(2, -half);
+  const hi = center * Math.pow(2,  half);
+  return dir > 0 ? [lo, hi] : [hi, lo];
+}
+
+// 上行音程：从起始音 f 向上取 cents 音分。
+// 模式②一律走这个，因为要控制的是"第一个音"之间的距离 ——
+// makePair 的 center 是几何中心不是首音，跨度一变首音就跟着跑，控不住。
+function upFrom(f, cents) {
+  return [f, f * Math.pow(2, cents / 1200)];
+}
+
+// 模式②的两个起始音：在舒适音区内取两个音，间隔至少 M2_MIN_START_GAP 音分。
+// 先在 [低, 高-下限] 里取较低的那个，较高的那个落在 [较低+下限, 高] 内，
+// 最后随机决定谁先谁后（否则首音高度会泄露答案）。
+function twoStarts() {
+  const lo = Math.log2(PITCH_LO), hi = lo + PITCH_SPAN;
+  const gap = M2_MIN_START_GAP / 1200;              // 换成八度单位
+  const a = lo + Math.random() * (hi - lo - gap);   // 较低的那个
+  const b = a + gap + Math.random() * (hi - a - gap);
+  const [fLow, fHigh] = [Math.pow(2, a), Math.pow(2, b)];
+  return rnd() > 0 ? [fLow, fHigh] : [fHigh, fLow];
+}
+
+function nextDelta() {
+  if (!S.bayes.trials.length) return FIRST_DELTA[S.mode];
+  return clamp(S.bayes.median, MU_LO, MU_HI);
+}
+
+function newTrial() {
+  clearTimeout(advanceTimer);
+  advanceTimer = null;
+  S.locked = false;
+  S.view = null;
+
+  const d = nextDelta();
+  if (S.mode === 1) {
+    const up = rnd() > 0;
+    const [f1, f2] = makePair(randCenter(), d, up ? 1 : -1);
+    S.trial = { groups: [[f1, f2]], answer: up ? 'b' : 'a', delta: d };
+  } else {
+    const small = 100 + Math.random() * 300;
+    const big = small + d;
+    const firstIsBig = rnd() > 0;                   // 第一个音程跨度更大？
+    const startLow  = rnd() > 0;                    // 第一个音程起始音更低？
+    const [sLo, sHi] = twoStarts();                 // 两个起始音已保证拉开 >= M2_MIN_START_GAP
+    const A = upFrom(startLow ? sLo : sHi, firstIsBig ? big : small);
+    const B = upFrom(startLow ? sHi : sLo, firstIsBig ? small : big);
+    S.trial = { groups: [A, B], answer: firstIsBig ? 'a' : 'b', delta: d };
+  }
+
+  el('prompt').textContent = S.mode === 1 ? '哪一个音更高？' : '哪一组音程的跨度更大？';
+  renderHud();
+  renderView();
+  playGroups(S.trial.groups);
+}
+
+/* ===================== 播放 ===================== */
+function playGroups(groups) {
+  if (!groups) return;
+  if (S.mode === 1) {
+    const [f1, f2] = groups[0];
+    schedule([
+      { f: f1, d: NOTE_DUR, rest: GAP },
+      { f: f2, d: NOTE_DUR, rest: 0.1 },
+    ]);
+  } else {
+    const [[a1, a2], [b1, b2]] = groups;
+    schedule([
+      { f: a1, d: NOTE_DUR, rest: GAP },
+      { f: a2, d: NOTE_DUR, rest: PAIR_GAP },
+      { f: b1, d: NOTE_DUR, rest: GAP },
+      { f: b2, d: NOTE_DUR, rest: 0.1 },
+    ]);
+  }
+}
+
+// 播放当前显示的那一题（当前题或回看中的题）
+function playShown() {
+  const rec = S.view === null ? S.trial : S.history[S.view];
+  if (rec) playGroups(rec.groups);
+}
+
+/* ===================== 作答 ===================== */
+function answer(choice) {
+  if (S.phase !== 'testing' || S.locked || S.view !== null || !S.trial) return;
+  S.locked = true;
+
+  const ok = choice === S.trial.answer;
+  S.bayes.update(S.trial.delta, ok);
+  S.history.push({
+    groups: S.trial.groups, delta: S.trial.delta,
+    answer: S.trial.answer, chosen: choice, correct: ok,
+  });
+  S.view = S.history.length - 1;      // 作答后立即"回看"这一条，反馈和图都从 history 渲染
+
+  renderHud();
+  renderView();
+
+  advanceTimer = setTimeout(() => {
+    advanceTimer = null;
+    if (S.history.length >= trialsN()) finish();
+    else newTrial();
+  }, ok ? 1500 : 2200);
+}
+
+/* ===================== 翻页 ===================== */
+function goPrev() {
+  const cur = S.view === null ? S.history.length : S.view;   // 当前显示的是第几条（0 基）
+  if (cur === 0) return;
+  if (advanceTimer) { clearTimeout(advanceTimer); advanceTimer = null; }  // 回看时暂停自动出题
+  S.view = cur - 1;
+  renderView();
+}
+
+function goNext() {
+  if (S.view === null) return;                                // 已经在最新一题
+  if (S.view < S.history.length - 1) { S.view++; renderView(); return; }
+  if (S.phase === 'testing') newTrial();                      // 从最后一题继续答题
+  // 已结算：停在最后一题，不往前走
+}
+
+/* ===================== 结算 ===================== */
+function finish() {
+  clearTimeout(advanceTimer);
+  advanceTimer = null;
+  S.phase = 'done';
+  S.trial = null;
+  const rec = { est: S.bayes.median, ci: S.bayes.ci, acc: S.bayes.acc, n: S.history.length };
+  S.last[lastKey()] = rec;
+  if (S.view === null) S.view = S.history.length - 1;
+
+  el('prompt').textContent = '';
+  renderHud();
+  renderResult(rec);
+  renderView();
+  uploadResult(rec);
+}
+
+/* ===================== 成绩记录 ===================== */
+// payload 里只有成绩数字。IP 和浏览器标识刻意不在这里 —— 它们由数据库在插入时从请求头取，
+// 客户端碰不到，所以既伪造不了也删不掉。失败一律静默：记录是附加功能，
+// 绝不能因为它让测试本身出问题。
+function uploadResult(rec) {
+  if (!uploadOn()) return;
+  const row = {
+    mode:   S.mode,
+    len:    lenKey,
+    trials: rec.n,
+    est:    +rec.est.toFixed(1),
+    ci_lo:  +rec.ci[0].toFixed(1),
+    ci_hi:  +rec.ci[1].toFixed(1),
+    acc:    +rec.acc.toFixed(3),
+    pinned: rec.est > MU_HI * 0.85,   // 撞到搜索上界＝没测出来，统计时要能单独剔掉
+    // 逐题明细，数组顺序就是答题顺序（第 n 个元素 = 第 n 题）。
+    //   d = 本题的差距（音分）  f = 实际发声的频率，即"题面"（Hz，模式②是两组各两个）
+    //   a = 正确答案是哪个    p = 用户选了哪个    c = 答对了吗
+    detail: S.history.map(h => ({
+      d: +h.delta.toFixed(1),
+      f: h.groups.map(g => g.map(f => +f.toFixed(1))),
+      a: h.answer,
+      p: h.chosen,
+      c: h.correct,
+    })),
+  };
+  try {
+    fetch(`${UPLOAD.url}/rest/v1/${UPLOAD.table}`, {
+      method: 'POST',
+      headers: {
+        apikey: UPLOAD.key,
+        Authorization: 'Bearer ' + UPLOAD.key,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',     // 不要求回传插入的行，这样就不需要读权限
+      },
+      body: JSON.stringify(row),
+    }).catch(() => {});
+  } catch (e) { /* 记录失败就算了，不影响用户看结果 */ }
+}
+
+// 参考分档。模式①和②测的不是同一种能力，门槛必须分开，不能共用一把尺子。
+//
+// 模式① 比的是"两个纯音哪个高"，文献 JND 最好约 4–9 音分（1/12 半音），
+//   本测试每次都随机更换音区（防止靠绝对音高作答），比固定音区的经典测听难，
+//   未受过训练的人落在 20–50 音分是常态，不该判成"偏低"。故门槛 8/18/40/90。
+//
+// 模式② 比的是"两组音程哪组跨度大"，这是公认更难的任务。
+//   Zarate, Ritson & Poeppel (2012, JASA 132:984) 用纯音测音程大小辨别：
+//   音乐家要到 100 音分（一个半音）才有稳定的分辨力，未受过训练的人则要 125–150 音分以上；
+//   而且在该研究的"音区游走"条件下，非音乐家几乎不随差距增大而改善 —— 本测试正是这一条件。
+//   所以模式②的门槛整体上移一档，100 音分在这里已经是很好的成绩。
+//   注：下面 300 / 600 两条线是外推的（该研究只测到 175 音分），可信度低于前两条。
+function verdict(c, mode) {
+  if (mode === 2) {
+    if (c < 18) return '太棒了 —— 你比站长强! 快截图发给他!';
+    if (c < 70) return '很好 —— 达到受过训练的音乐家水平';
+    if (c < 130) return '不错 —— 好于多数未受过训练的人';
+    if (c < 250) return '常见区间 —— 未受过训练的人大多落在这里';
+    if (c < 450) return '偏高 —— 环境噪声、回放设备、注意力都会推高它';
+    return '很高 —— 建议换安静环境 + 耳机重测一次';
+  }
+  if (c < 3)  return '太棒了 —— 你比站长强! 快截图发给他!';
+  if (c < 8)  return '很好 —— 达到受过训练的音乐家水平';
+  if (c < 16) return '不错 —— 好于多数未受过训练的人';
+  if (c < 30) return '常见区间 —— 未受过训练的人大多落在这里';
+  if (c < 80) return '偏高 —— 环境噪声、回放设备、注意力都会推高它';
+  return '很高 —— 建议换安静环境 + 耳机重测一次';
+}
+
+function renderResult(r) {
+  const [lo, hi] = r.ci;
+  // 纯随机作答会把后验一路推到搜索上界（蒙特卡洛：中位数 748 音分），
+  // 这种情况不能把数字当成真值报出去
+  const pinned = r.est > MU_HI * 0.85;
+  const tag = pinned ? '没测出来 —— 结果撞到了搜索上界（800 音分）' : verdict(r.est, S.mode);
+  const warn = pinned || r.acc <= 0.56
+    ? `<div class="vsub" style="margin-top:8px;color:#f0a35e">本轮正确率接近随机水平，这个结果不可信，建议重测一次。</div>`
+    : '';
+
+  el('result').innerHTML = `
+    <div class="verdict">
+      <div class="vlabel">${S.mode === 1 ? '音高分辨阈限' : '音程大小分辨阈限'}（75% 正确率）</div>
+      <div class="vvalue"><b>${pinned ? '&gt;' + MU_HI : fmtC(r.est)}</b><span>音分</span></div>
+      <div class="vsub">90% 可信区间 ${fmtC(lo)} – ${fmtC(hi)} 音分${pinned ? '' : ' · 约 ' + (r.est / 100).toFixed(2) + ' 个半音'}</div>
+      <div class="vtag">${tag}</div>
+      <div class="vsub" style="margin-top:10px">${r.n} 题，答对 ${Math.round(r.acc * r.n)} 题（${Math.round(r.acc * 100)}%）</div>
+      <div class="vsub" style="margin-top:8px;font-size:12px;color:#5b6675;max-width:440px;margin-left:auto;margin-right:auto">
+        分档只是大致参考。本测试随机更换音区，比固定音区的经典测听通常更难。
+      </div>
+      ${warn}
+      <div class="chart" id="rChart"></div>
+      <div class="legend">
+        <i><span class="dot" style="background:#3fb950"></span>答对</i>
+        <i><span class="dot" style="background:#f85149"></span>答错</i>
+        <i><span class="dot" style="background:#58a6ff"></span>阈限估计</i>
+        <i>蓝色带 = 90% 可信区间</i>
+      </div>
+      <div class="cap">纵轴：每题的差距（音分，对数刻度）· 横轴：题号 —— 看它怎么收敛到你的水平</div>
+    </div>
+    <div class="row">
+      <button id="again" class="big" style="max-width:220px">再来一轮</button>
+      <button id="switch" class="ghost">换另一个模式 →</button>
+    </div>
+    <div class="sect">↓ 下面可以逐题回看本轮的每一道题，并重新播放</div>`;
+
+  el('result').hidden = false;
+  renderHistory(r);
+  el('again').addEventListener('click', start);
+  el('switch').addEventListener('click', () => setMode(S.mode === 1 ? 2 : 1));
+}
+
+/* ===================== 统一渲染当前显示的那一题 ===================== */
+function renderView() {
+  const rec = S.view === null ? null : S.history[S.view];
+
+  // 答案按钮：回看时展示该题的对错配色并禁用
+  for (const b of document.querySelectorAll('.ans')) {
+    b.classList.remove('right', 'wrong', 'picked');
+    if (rec) {
+      b.disabled = true;
+      if (b.dataset.choice === rec.answer) b.classList.add('right');
+      if (b.dataset.choice === rec.chosen) b.classList.add('picked');
+      if (b.dataset.choice === rec.chosen && !rec.correct) b.classList.add('wrong');
+    } else {
+      b.disabled = S.locked || S.phase !== 'testing';
+    }
+  }
+
+  const fb = el('feedback');
+  if (rec) {
+    fb.className = 'feedback ' + (rec.correct ? 'ok' : 'no');
+    fb.innerHTML = (rec.correct ? '✓ 答对' : '✗ 答错')
+      + ' — 本题差距 ' + fmtC(rec.delta) + ' 音分'
+      + (S.view === null ? '' : ' <em>（回看中）</em>');
+    renderChart(rec.groups);
+  } else {
+    fb.className = 'feedback';
+    fb.textContent = '';
+    el('chart').innerHTML = '';
+  }
+
+  renderPager();
+}
+
+function renderPager() {
+  const n = trialsN();
+  const total = S.history.length;
+  const shownNo = S.view === null ? total + 1 : S.view + 1;
+
+  el('pager').innerHTML = S.view === null
+    ? `第 <b>${Math.min(shownNo, n)}</b> / ${n} 题`
+    : `回看 <b>${shownNo}</b> / ${n}`;
+
+  el('prev').disabled = shownNo <= 1;
+  el('next').disabled = (S.view === null) ||
+                        (S.phase === 'done' && S.view >= total - 1);
+  el('quit').hidden = S.phase === 'done';
+}
+
+/* ===================== 图表：本题音高轮廓 ===================== */
+function renderChart(groups) {
+  const box = el('chart');
+  const notes = groups.flat();
+  if (notes.length < 2) { box.innerHTML = ''; return; }
+
+  const midis = notes.map(freqToMidi);
+  const [aLo, aHi] = axisFor(midis);
+  const span = aHi - aLo;
+  const step = gridStep(span);
+
+  const W = 400, H = 224, GUT = 56, PADR = 16, PADT = 12, PADB = 12;
+  const iw = W - GUT - PADR, ih = H - PADT - PADB;
+  const Y = m => PADT + (aHi - m) / span * ih;
+  const eps = 1e-9;
+
+  // 网格线的位置集合：先按 step 均匀铺，step < 1 时再补上范围内的整数半音，
+  // 否则缩放到半音以内时整条轴上没有一个绝对音名可以参考
+  const lines = [];
+  for (let m = Math.ceil(aLo / step - eps) * step; m <= aHi + eps; m += step) lines.push(m);
+  if (step < 1) {
+    for (let m = Math.ceil(aLo - eps); m <= Math.floor(aHi + eps); m++) {
+      if (!lines.some(v => Math.abs(v - m) < eps)) lines.push(m);
+    }
+  }
+
+  let g = '';
+  for (const m of lines.sort((a, b) => b - a)) {
+    const y = Y(m).toFixed(1);
+    const isInt = Math.abs(m - Math.round(m)) < eps;
+    const isC = isInt && Math.round(m) % 12 === 0;
+    const isG = isInt && Math.round(m) % 12 === 7;
+    // 整数半音给绝对音名（C 最亮，G 次之），细分线给相对下方半音的偏差
+    const label = isInt ? midiToName(m) : `+${Math.round((m - Math.floor(m + eps)) * 100)}¢`;
+    g += `<line x1="${GUT}" y1="${y}" x2="${W - PADR}" y2="${y}" stroke="#8b96a5"
+            stroke-opacity="${isC ? 0.42 : isG ? 0.26 : isInt ? 0.16 : 0.09}"/>`;
+    g += `<text x="${GUT - 8}" y="${y}" text-anchor="end" dominant-baseline="middle"
+            font-size="${isC ? 11.5 : 10.5}" font-weight="${isC ? 600 : 400}"
+            fill="${isC ? '#c9d4e2' : isG ? '#8b96a5' : isInt ? '#7f8b9e' : '#5b6675'}">${label}</text>`;
+  }
+
+  // 时间轴上的位置：同组内挨着，组间留更宽的间隙
+  const pts = [];
+  groups.forEach((grp, gi) => grp.forEach(f => pts.push({ m: freqToMidi(f), gi })));
+  const units = [];
+  let u = 0;
+  pts.forEach((p, i) => { if (i > 0) u += (p.gi !== pts[i - 1].gi ? 1.8 : 1); units.push(u); });
+  const x0 = GUT + 34, x1 = W - PADR - 34;
+  const sx = (x1 - x0) / (units[units.length - 1] || 1);
+  const X = i => x0 + units[i] * sx;
+
+  let linesSvg = '';
+  for (let i = 1; i < pts.length; i++) {
+    if (pts[i].gi === pts[i - 1].gi) {
+      linesSvg += `<line x1="${X(i - 1).toFixed(1)}" y1="${Y(pts[i - 1].m).toFixed(1)}"
+                         x2="${X(i).toFixed(1)}"     y2="${Y(pts[i].m).toFixed(1)}"
+                         stroke="#3d4757" stroke-width="2" stroke-linecap="round"/>`;
+    }
+  }
+
+  // 音名标签，重叠时上下让位
+  const placed = [];
+  const clash = (x, y) => placed.some(p => Math.abs(p.y - y) < 12 && Math.abs(p.x - x) < 52);
+  let labels = '', dots = '';
+  pts.forEach((p, i) => {
+    const x = X(i), y = Y(p.m);
+    const txt = midiLabel(p.m);
+    const right = x + 52 < W - PADR;
+    const lx = right ? x + 11 : x - 11;
+    let ly = y;
+    if (clash(lx, ly)) {
+      for (let d = 13; d <= 52; d += 13) {
+        if (y + d < H - 8 && !clash(lx, y + d)) { ly = y + d; break; }
+        if (y - d > 8 && !clash(lx, y - d)) { ly = y - d; break; }
+      }
+    }
+    placed.push({ x: lx, y: ly });
+    labels += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" ${right ? '' : 'text-anchor="end"'}
+                 dominant-baseline="middle" font-size="11" fill="#8b96a5">${txt}</text>`;
+    dots += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5"
+                     fill="#58a6ff" stroke="#0d1117" stroke-width="2"/>`;
+  });
+
+  box.innerHTML =
+    `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="音高轮廓">
+       ${g}${linesSvg}${dots}${labels}
+     </svg>
+     <div class="cap">纵轴 ${midiLabel(aLo)} → ${midiLabel(aHi)}（每个刻度 ${
+       step >= 1 ? step + ' 个半音' : Math.round(step * 100) + ' 音分'}）</div>`;
+}
+
+/* ===================== 图表：收敛过程 ===================== */
+function renderHistory(r) {
+  const host = el('rChart');
+  if (!host) return;
+  const ts = S.bayes.trials, N = ts.length;
+  if (!N) { host.innerHTML = ''; return; }
+
+  const W = 400, H = 190, L = 58, R = 16, T = 14, B = 28;
+  const iw = W - L - R, ih = H - T - B;
+  const lo = Math.log10(MU_LO), hi = Math.log10(MU_HI);
+  const X = i => L + (N <= 1 ? iw / 2 : i * iw / (N - 1));
+  const Y = d => T + (hi - Math.log10(d)) / (hi - lo) * ih;
+
+  let g = '';
+  for (const v of [10, 30, 100, 300, 800]) {
+    const y = Y(v).toFixed(1);
+    g += `<line x1="${L}" y1="${y}" x2="${W - R}" y2="${y}" stroke="#8b96a5" stroke-opacity="0.16"/>`;
+    g += `<text x="${L - 8}" y="${y}" text-anchor="end" dominant-baseline="middle"
+            font-size="10" fill="#7f8b9e">${v}</text>`;
+  }
+  g += `<text x="${L - 8}" y="${T - 4}" text-anchor="end" font-size="10" fill="#5b6675">音分</text>`;
+
+  const [c0, c1] = r.ci;
+  const yTop = Y(c1), yBot = Y(c0);
+  g += `<rect x="${L}" y="${yTop.toFixed(1)}" width="${iw}" height="${Math.max(1.5, yBot - yTop).toFixed(1)}"
+          fill="#58a6ff" fill-opacity="0.14"/>`;
+  g += `<line x1="${L}" y1="${Y(r.est).toFixed(1)}" x2="${W - R}" y2="${Y(r.est).toFixed(1)}"
+          stroke="#58a6ff" stroke-width="1.5" stroke-dasharray="5 4"/>`;
+
+  ts.forEach((t, i) => {
+    if ((i + 1) % 5 === 0 || i === 0) {
+      g += `<line x1="${X(i).toFixed(1)}" y1="${H - B}" x2="${X(i).toFixed(1)}" y2="${H - B + 4}"
+              stroke="#8b96a5" stroke-opacity="0.4"/>`;
+    }
+    g += `<circle cx="${X(i).toFixed(1)}" cy="${Y(t.delta).toFixed(1)}" r="3.6"
+            fill="${t.correct ? '#3fb950' : '#f85149'}" stroke="#0d1117" stroke-width="1.2"/>`;
+  });
+
+  g += `<text x="${L}" y="${H - 8}" font-size="10" fill="#5b6675">第 1 题</text>`;
+  g += `<text x="${W - R}" y="${H - 8}" text-anchor="end" font-size="10" fill="#5b6675">第 ${N} 题</text>`;
+
+  host.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="收敛过程">${g}</svg>`;
+}
+
+/* ===================== HUD ===================== */
+function renderHud() {
+  const n = trialsN();
+  el('hudProg').textContent = `${Math.min(S.history.length + (S.phase === 'testing' && S.view === null ? 1 : 0), n)} / ${n}`;
+  el('hudCur').textContent = S.trial ? fmtC(S.trial.delta) + ' 音分' : '—';
+
+  const b = S.bayes;
+  el('hudEst').textContent = (b && b.trials.length >= 2) ? fmtC(b.median) + ' 音分' : '—';
+
+  const done = b ? b.trials.length : 0;
+  const right = b ? b.trials.filter(t => t.correct).length : 0;
+  el('hudAcc').textContent = done ? `${Math.round(right / done * 100)}%` : '—';
+}
+
+/* ===================== 界面切换 ===================== */
+// 长度标签上的题数跟着当前模式走，所以每次切模式都要重画一遍
+function renderLenTabs() {
+  for (const b of document.querySelectorAll('[data-len]')) {
+    const L = LENGTHS[b.dataset.len];
+    b.textContent = `${L.name} ${L.n[S.mode]} 题`;
+    b.classList.toggle('on', b.dataset.len === lenKey);
+  }
+}
+
+// 换长度档：本轮作废，回到开始界面 —— 和切换模式同样的语义。
+// 不能边测边换，否则"标准换快速"在已经答了 20 题时根本没有意义。
+function setLength(k) {
+  if (k === lenKey || !LENGTHS[k]) return;
+  lenKey = k;
+  prefs.len = k;
+  savePrefs();
+  setMode(S.mode, true);
+}
+
+function setMode(m, force) {
+  if (m === S.mode && S.phase !== 'idle' && !force) return;
+  clearTimeout(advanceTimer);
+  advanceTimer = null;
+  S.mode = m;
+  S.phase = 'idle';
+  S.bayes = null;
+  S.trial = null;
+  S.locked = false;
+  S.history = [];
+  S.view = null;
+
+  for (const t of document.querySelectorAll('[data-mode]')) t.classList.toggle('on', +t.dataset.mode === m);
+  renderLenTabs();
+
+  el('startBtn').hidden = false;
+  el('answers').hidden = true;
+  el('row').hidden = true;
+  el('result').hidden = true;
+  el('result').innerHTML = '';
+  el('btns1').hidden = m !== 1;
+  el('btns2').hidden = m !== 2;
+  el('feedback').textContent = '';
+  el('feedback').className = 'feedback';
+  el('chart').innerHTML = '';
+  el('prompt').textContent = m === 1 ? '听两个音，判断哪一个更高。' : '听两组音程，判断哪一组跨度更大。';
+
+  const prev = S.last[lastKey()];
+  el('startBtn').textContent = prev
+    ? `▶ 再测一轮（上次 ${fmtC(prev.est)} 音分）`
+    : '▶ 开始本轮测试';
+
+  renderHud();
+}
+
+function start() {
+  clearTimeout(advanceTimer);
+  advanceTimer = null;
+  S.phase = 'testing';
+  S.bayes = new Bayes();
+  S.history = [];
+  S.view = null;
+  S.locked = false;
+
+  el('startBtn').hidden = true;
+  el('result').hidden = true;
+  el('result').innerHTML = '';
+  el('answers').hidden = false;
+  el('row').hidden = false;
+  newTrial();
+}
+
+/* ===================== 事件 ===================== */
+// 正在答题时切换会作废本轮，先拦一道确认 —— 两个标签条就在题面上方，
+// 很容易在按答案时手滑点到。
+function confirmAbandon(target) {
+  if (S.phase !== 'testing') return true;
+  const n = S.history.length;
+  const cost = n === 0
+    ? '这一轮刚起了个头，还没有答过题。'
+    : `已经答了 ${n} 题，切换会作废这 ${n} 题的成绩，需要从第 1 题重新开始。`;
+  return confirm(`本轮正在测试中。\n\n切换到${target}会重新开始：${cost}\n\n确定要切换吗？`);
+}
+
+for (const t of document.querySelectorAll('[data-mode]')) {
+  t.addEventListener('click', () => {
+    const m = +t.dataset.mode;
+    if (m === S.mode) return;                    // 点的就是当前模式，什么都不会发生，不必打扰
+    if (!confirmAbandon(m === 1 ? '模式①「哪个音更高」' : '模式②「哪个音程更大」')) return;
+    setMode(m);
+  });
+}
+for (const t of document.querySelectorAll('[data-len]')) {
+  t.addEventListener('click', () => {
+    const k = t.dataset.len;
+    if (k === lenKey) return;                    // 同上，点当前档位不做任何事
+    if (!confirmAbandon(`「${LENGTHS[k].name}」题量`)) return;
+    setLength(k);
+  });
+}
+
+el('startBtn').addEventListener('click', start);
+for (const b of document.querySelectorAll('.ans')) {
+  b.addEventListener('click', () => answer(b.dataset.choice));
+}
+el('prev').addEventListener('click', goPrev);
+el('next').addEventListener('click', goNext);
+el('replay').addEventListener('click', playShown);
+
+el('quit').addEventListener('click', () => {
+  clearTimeout(advanceTimer);
+  advanceTimer = null;
+  setMode(S.mode, true);
+  el('prompt').textContent = '本轮已放弃。';
+});
+
+el('vol').addEventListener('input', e => {
+  prefs.vol = +e.target.value;
+  if (master) master.gain.value = prefs.vol;
+  savePrefs();
+});
+
+el('timbre').addEventListener('change', e => {
+  prefs.timbre = e.target.value;
+  savePrefs();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.repeat) return;
+  const tag = e.target.tagName;
+  if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+
+  if (e.key === ' ') {
+    e.preventDefault();
+    if (S.phase === 'idle') start();
+    else playShown();
+    return;
+  }
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    if (S.phase === 'idle') start();
+    else if (S.view !== null) goNext();
+    else playShown();
+    return;
+  }
+  if (S.phase !== 'testing') return;
+
+  // 回看中不能用方向键作答，先退出回看
+  const map = { ArrowLeft: 'a', ArrowRight: 'b', '1': 'a', '2': 'b' };
+  const choice = map[e.key];
+  if (choice) { e.preventDefault(); answer(choice); }
+});
+
+lenKey = prefs.len;
+el('vol').value = prefs.vol;
+el('timbre').value = prefs.timbre;
+setMode(1, true);
+</script>
+</body>
+</html>

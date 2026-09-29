@@ -255,18 +255,44 @@ const uploadOn = () => !!(UPLOAD.url && UPLOAD.key);
 // 模式② 两个音程起始音之间的最小间隔（音分）。
 // 两组都是上行时，如果起始音挨得太近，两组第二个音的高低顺序就和跨度顺序一致，
 // "哪一组跨度更大"会退化成"哪个第二个音更高" —— 等于在考模式①。
-// 拉开到 500 音分（纯四度）后，第二个音的高低由起始音差主导，这个偷懒策略的正确率
-// 掉回 50%（随机水平），必须真的比较跨度才答得对。
-// 顺带一个好处：只要 d < 500，两组第二个音也自动不会重合。
-const M2_MIN_START_GAP = 500;
+// 拉开到 500 音分（纯四度）后，第二个音的高低由起始音差 g 主导；只要 g > d（d 是两组的
+// 跨度差），偷懒策略的正确率就掉回 50%（随机水平），必须真的比较跨度才答得对。
+// 注意条件是 g > d，不是 g ≥ 500：第一题的 d 就是 600，光靠 500 不够，所以间隔按 d 抬。
+// 顺带一个好处：两组第二个音的间距正好是 |g - d|，抬到 100 音分以上就不会撞在一起。
+const M2_MIN_START_GAP = 500, M2_GAP_MARGIN = 100;
 
 /* 贝叶斯自适应估计器的参数 */
-const MU_LO = 2, MU_HI = 800, MU_N = 90;     // 阈限搜索范围（音分）与格点数
+// 阈限搜索范围（音分）与格点数。
+// 下界给 0.5 而不是 2：搜索下界是一堵墙，估计值撞上去就再也下不来。旧版下界 2 音分
+// 落在人类水平之内，于是一个总能答对的被试会被焊在 2.0 音分：最后二十题里估计值只在
+// 2.5→2.0 之间挪动（看着就是"下降停了"），严谨档比标准档多问的 20 题也问不出任何新东西
+// （蒙特卡洛：30 题终值 2.03，50 题终值 2.02）。0.5 音分在这个范式里没人达得到
+// —— 0.36 秒的纯音、音区还随机 —— 墙被挪到人类区间之外，下降就一路走到底。
+const MU_LO = 0.5, MU_HI = 800, MU_N = 120;
+
+// 但先验不能跟着铺满整个 0.5–800 音分：log 均匀会把太多先验质量堆在"人类不可能"的低端，
+// 把所有人的估计往下拽、可信区间也拉宽。所以 2 音分以下只保留 MU_TAPER 倍密度
+// （合计约 5% 的先验质量）。这不是对人群比例的主张，而是给"万一遇到极好的耳朵"留的通道：
+// 那里密度不为 0，估计值才可能被推下 2 音分。
+// 覆盖率那个 0% 不是偶然（旧版下界 2 音分、先验 log 均匀）：报出来的阈限是 μ·10^(s·Z75)，
+// μ 贴着下界 2 也还有 2.01 音分，区间本身又只有 0.35 个十倍程宽 —— 阈限真在 2 音分的人
+// 永远落在区间外。而压低端先验几乎不要钱（蒙特卡洛，跑的就是这个文件，模式①30 题，
+// 真斜率 0.16，关掉 MU_TAPER 作对照）：2 音分处 90% 区间的覆盖率 96% → 98%、
+// 宽度 0.80 → 0.70 个十倍程、偏差 -0.028 → +0.015；15 音分处 RMSE 0.179 → 0.171、
+// 宽度 0.87 → 0.84。两头都是净赚，所以这个压扁留着。
+const MU_TAPER_BELOW = 2, MU_TAPER = 0.25;
 // 心理测量函数斜率（log10 音分单位），一起边缘化掉。
-// 集合放宽到 0.65 是刻意的：真实斜率比假设缓得多时，收窄的集合会给出虚窄的可信区间。
-// 蒙特卡洛显示取 {0.06…0.65} 后，真斜率 0.15/0.35/0.60 三种情况的实际覆盖率
-// 分别为 98%/90%/75%（若只取到 0.26 则掉到 93%/71%/53%）。
-const SLOPES = [0.06, 0.10, 0.16, 0.26, 0.42, 0.65];
+// 取值和权重按文献校准：把"d′ 对 Δf 的幂律指数"换算成本文的斜率，正常听力大致落在
+// 0.22–0.35（文献指数 0.77–1.0 → 斜率 0.25–0.33；本测试音区随机、单音只有 0.36 秒，
+// 往"更平"的一侧放宽），所以中段给足先验、两端只留很薄的密度。
+// 不是硬墙：任何斜率都还拟合得动，只是极端值先验上先扣一档。原来的 {0.06…0.65} 等权
+// 等于宣称"极陡和极平一样常见"，多出来的先验质量几乎全用在把可信区间撑宽上——
+// 同一批真值下宽度因此虚高 5–11%（15 音分处 0.94 → 0.84 个十倍程，覆盖率 98% → 97%），
+// 偏差没变、RMSE 还略降（0.178 → 0.171）。
+// 斜率的不确定是区间宽度的主要来源，但它是 30 个答案读不出来的（"陡+高阈限"与
+// "平+低阈限"能产生同样长的答对/答错序列），所以剩下那截宽度是信息量的下限，不是先验的锅。
+const SLOPES  = [0.08, 0.11, 0.16, 0.22, 0.30, 0.42, 0.60];
+const SLOPE_W = [0.10, 0.30, 0.90, 1.50, 1.50, 0.80, 0.25];
 const LAPSE  = 0.02;                         // 失误率：允许偶尔手滑，避免一次误按把估计带飞
 
 const el = id => document.getElementById(id);
@@ -364,6 +390,9 @@ const MU_GRID = (() => {
   return Array.from({ length: MU_N }, (_, i) => a + (b - a) * i / (MU_N - 1));
 })();
 
+// 每个格点的先验权重：log 均匀就是等权，2 音分以下按 MU_TAPER 压扁（见上面的说明）
+const MU_W = MU_GRID.map(l => Math.pow(10, l) < MU_TAPER_BELOW ? MU_TAPER : 1);
+
 // 二选一强迫选择（2AFC）的心理测量函数：猜对基线 0.5，上限 0.5+0.5(1-λ)
 // 自变量是 log10(差距)，参数是 log10(阈限) 与斜率
 function pCorrect(logDelta, logMu, s) {
@@ -377,7 +406,7 @@ const Z75   = Math.log(SIG75 / (1 - SIG75));
 
 class Bayes {
   constructor() {
-    this.w = MU_GRID.map(() => SLOPES.map(() => 1));   // 均匀先验
+    this.w = MU_W.map(w => SLOPES.map((_, j) => w * SLOPE_W[j]));   // 先验：见 MU_W 与 SLOPE_W
     this.norm();
     this.trials = [];                                   // [{ delta, correct }]
   }
@@ -418,6 +447,13 @@ class Bayes {
   get acc()    { return this.trials.length ? this.trials.filter(t => t.correct).length / this.trials.length : 0; }
 }
 
+// 撞到搜索边界＝没测出来，两头的数字都不能当成阈限报出去（统计时也要能剔除）：
+//   上界是纯随机作答 —— 后验被推到 800 音分那头（中位数约 748）；
+//   下界是全程答对 —— 已经问不出更小的差距了，估计值停在 0.5 音分。0.5–0.65 音分之间的
+//   差没人听得出来，真撞到这里只说明"这一轮没有测出上限"，不代表阈限真是 0.5。
+const atCeil  = e => e > MU_HI * 0.85;
+const atFloor = e => e < MU_LO * 1.3;
+
 /* ===================== 状态 ===================== */
 const S = {
   mode: 1,
@@ -450,12 +486,12 @@ function upFrom(f, cents) {
   return [f, f * Math.pow(2, cents / 1200)];
 }
 
-// 模式②的两个起始音：在舒适音区内取两个音，间隔至少 M2_MIN_START_GAP 音分。
+// 模式②的两个起始音：在舒适音区内取两个音，间隔至少 max(500, d + 100) 音分（见上）。
 // 先在 [低, 高-下限] 里取较低的那个，较高的那个落在 [较低+下限, 高] 内，
 // 最后随机决定谁先谁后（否则首音高度会泄露答案）。
-function twoStarts() {
+function twoStarts(d) {
   const lo = Math.log2(PITCH_LO), hi = lo + PITCH_SPAN;
-  const gap = M2_MIN_START_GAP / 1200;              // 换成八度单位
+  const gap = Math.max(M2_MIN_START_GAP, d + M2_GAP_MARGIN) / 1200;   // 换成八度单位
   const a = lo + Math.random() * (hi - lo - gap);   // 较低的那个
   const b = a + gap + Math.random() * (hi - a - gap);
   const [fLow, fHigh] = [Math.pow(2, a), Math.pow(2, b)];
@@ -483,7 +519,7 @@ function newTrial() {
     const big = small + d;
     const firstIsBig = rnd() > 0;                   // 第一个音程跨度更大？
     const startLow  = rnd() > 0;                    // 第一个音程起始音更低？
-    const [sLo, sHi] = twoStarts();                 // 两个起始音已保证拉开 >= M2_MIN_START_GAP
+    const [sLo, sHi] = twoStarts(d);                // 两个起始音已保证拉开 > d（见 M2_MIN_START_GAP）
     const A = upFrom(startLow ? sLo : sHi, firstIsBig ? big : small);
     const B = upFrom(startLow ? sHi : sLo, firstIsBig ? small : big);
     S.trial = { groups: [A, B], answer: firstIsBig ? 'a' : 'b', delta: d };
@@ -591,7 +627,9 @@ function uploadResult(rec) {
     ci_lo:  +rec.ci[0].toFixed(1),
     ci_hi:  +rec.ci[1].toFixed(1),
     acc:    +rec.acc.toFixed(3),
-    pinned: rec.est > MU_HI * 0.85,   // 撞到搜索上界＝没测出来，统计时要能单独剔掉
+    // 撞到任意一端＝没测出来（上端是纯随机作答，下端是全程答对），统计时要能单独剔掉。
+    // 旧数据不受影响：那时下界是 2 音分，没人能把估值压到 0.65 音分以下。
+    pinned: atCeil(rec.est) || atFloor(rec.est),
     // 逐题明细，数组顺序就是答题顺序（第 n 个元素 = 第 n 题）。
     //   d = 本题的差距（音分）  f = 实际发声的频率，即"题面"（Hz，模式②是两组各两个）
     //   a = 正确答案是哪个    p = 用户选了哪个    c = 答对了吗
@@ -648,10 +686,12 @@ function verdict(c, mode) {
 
 function renderResult(r) {
   const [lo, hi] = r.ci;
-  // 纯随机作答会把后验一路推到搜索上界（蒙特卡洛：中位数 748 音分），
-  // 这种情况不能把数字当成真值报出去
-  const pinned = r.est > MU_HI * 0.85;
-  const tag = pinned ? '没测出来 —— 结果撞到了搜索上界（800 音分）' : verdict(r.est, S.mode);
+  // 撞到搜索两端都报成不等式，不把边界值当成测出来的阈限
+  const pinned  = atCeil(r.est);    // 纯随机作答：后验被推到上界（蒙特卡洛：中位数 748 音分）
+  const floored = atFloor(r.est);   // 全程答对：已经问不出更小的差距
+  const tag = pinned  ? '没测出来 —— 结果撞到了搜索上界（800 音分）'
+            : floored ? '超出下限 —— 整轮几乎没答错，这已经是本测试能问的最小差距'
+            : verdict(r.est, S.mode);
   const warn = pinned || r.acc <= 0.56
     ? `<div class="vsub" style="margin-top:8px;color:#f0a35e">本轮正确率接近随机水平，这个结果不可信，建议重测一次。</div>`
     : '';
@@ -659,8 +699,8 @@ function renderResult(r) {
   el('result').innerHTML = `
     <div class="verdict">
       <div class="vlabel">${S.mode === 1 ? '音高分辨阈限' : '音程大小分辨阈限'}（75% 正确率）</div>
-      <div class="vvalue"><b>${pinned ? '&gt;' + MU_HI : fmtC(r.est)}</b><span>音分</span></div>
-      <div class="vsub">90% 可信区间 ${fmtC(lo)} – ${fmtC(hi)} 音分${pinned ? '' : ' · 约 ' + (r.est / 100).toFixed(2) + ' 个半音'}</div>
+      <div class="vvalue"><b>${pinned ? '&gt;' + MU_HI : floored ? '&lt;' + MU_LO : fmtC(r.est)}</b><span>音分</span></div>
+      <div class="vsub">90% 可信区间 ${fmtC(lo)} – ${fmtC(hi)} 音分${pinned || floored ? '' : ' · 约 ' + (r.est / 100).toFixed(2) + ' 个半音'}</div>
       <div class="vtag">${tag}</div>
       <div class="vsub" style="margin-top:10px">${r.n} 题，答对 ${Math.round(r.acc * r.n)} 题（${Math.round(r.acc * 100)}%）</div>
       <div class="vsub" style="margin-top:8px;font-size:12px;color:#5b6675;max-width:440px;margin-left:auto;margin-right:auto">
@@ -841,7 +881,7 @@ function renderHistory(r) {
   const Y = d => T + (hi - Math.log10(d)) / (hi - lo) * ih;
 
   let g = '';
-  for (const v of [10, 30, 100, 300, 800]) {
+  for (const v of [1, 3, 10, 30, 100, 300, 800]) {
     const y = Y(v).toFixed(1);
     g += `<line x1="${L}" y1="${y}" x2="${W - R}" y2="${y}" stroke="#8b96a5" stroke-opacity="0.16"/>`;
     g += `<text x="${L - 8}" y="${y}" text-anchor="end" dominant-baseline="middle"

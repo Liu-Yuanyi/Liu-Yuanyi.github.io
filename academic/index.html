@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xiaokang Liu (刘小康) — Peking University</title>
+    <meta name="description" content="Xiaokang Liu (刘小康), Peking University. Research on peer prediction and algorithmic game theory.">
+    <link rel="icon" href="../logo.svg" type="image/svg+xml">
+    <style>
+        :root {
+            --text: #222;
+            --muted: #6b7280;
+            --accent: #0056b3;
+            --rule: #e5e7eb;
+            --bg: #fbfbfc;
+        }
+        * { box-sizing: border-box; }
+        html { -webkit-text-size-adjust: 100%; }
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans SC', sans-serif;
+            font-size: 16.5px;
+            line-height: 1.7;
+        }
+        main {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 4rem 1.5rem 3rem;
+        }
+
+        /* ---------- Header ---------- */
+        .hero {
+            display: flex;
+            align-items: center;
+            gap: 1.75rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--rule);
+        }
+        .avatar {
+            width: 104px;
+            height: 104px;
+            border-radius: 18px;
+            flex-shrink: 0;
+        }
+        h1 {
+            margin: 0 0 0.35rem;
+            font-family: Georgia, 'Times New Roman', 'Noto Serif SC', serif;
+            font-size: 2rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            line-height: 1.25;
+        }
+        .name-zh {
+            font-weight: 400;
+            color: var(--muted);
+            font-size: 0.72em;
+            margin-left: 0.4rem;
+        }
+        .affiliation {
+            margin: 0 0 0.5rem;
+            font-size: 1.05rem;
+        }
+        .interests {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        /* ---------- Sections ---------- */
+        section {
+            padding: 1.9rem 0;
+            border-bottom: 1px solid var(--rule);
+        }
+        section:last-of-type { border-bottom: none; }
+        h2 {
+            margin: 0 0 0.85rem;
+            font-family: Georgia, 'Times New Roman', 'Noto Serif SC', serif;
+            font-size: 1.22rem;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+        }
+        p { margin: 0.65rem 0; }
+        a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.15s ease;
+        }
+        a:hover { border-bottom-color: var(--accent); }
+
+        ul.research {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        ul.research li {
+            margin: 0.75rem 0;
+        }
+        ul.research strong {
+            font-weight: 600;
+        }
+        .muted { color: var(--muted); }
+
+        .contact {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .contact li {
+            margin: 0.5rem 0;
+        }
+        .contact .label {
+            display: inline-block;
+            width: 5.5rem;
+            color: var(--muted);
+        }
+
+        footer {
+            margin-top: 2.5rem;
+            padding-top: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+
+        @media (max-width: 520px) {
+            main { padding-top: 2.5rem; }
+            .hero { flex-direction: column; text-align: center; gap: 1rem; }
+            h1 { font-size: 1.7rem; }
+            .contact .label { display: block; width: auto; }
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --text: #e8e8ea;
+                --muted: #9aa0a6;
+                --accent: #6ea8fe;
+                --rule: #2e3035;
+                --bg: #17181a;
+            }
+            .avatar { box-shadow: 0 0 0 1px #2e3035; }
+        }
+    </style>
+</head>
+<body>
+<main>
+    <header class="hero">
+        <img class="avatar" src="../logo.svg" alt="Xiaokang Liu">
+        <div>
+            <h1>Xiaokang Liu <span class="name-zh">刘小康</span></h1>
+            <p class="affiliation">Undergraduate, Turing Class · School of EECS, Peking University</p>
+            <p class="interests">Peer Prediction &nbsp;·&nbsp; Algorithmic Game Theory</p>
+        </div>
+    </header>
+
+    <section id="about">
+        <h2>About</h2>
+        <p>
+            I am an undergraduate in the Turing Class at Peking University's School of Electronics
+            Engineering and Computer Science. I work on <strong>peer prediction</strong> — eliciting
+            truthful information from agents when no ground truth is available — with Prof. Yuqing Kong,
+            and on <strong>algorithmic game theory</strong> with Prof. Xiaotie Deng. More broadly,
+            I am interested in how strategic behavior shapes algorithms, markets, and information systems.
+        </p>
+    </section>
+
+    <section id="research">
+        <h2>Research Interests</h2>
+        <ul class="research">
+            <li>
+                <strong>Peer Prediction.</strong>
+                Designing truthful, incentive-compatible mechanisms for information elicitation
+                without verification — including multi-task settings and the communication
+                complexity of peer prediction.
+            </li>
+            <li>
+                <strong>Algorithmic Game Theory.</strong>
+                Mechanism design, auction theory, and equilibrium analysis in computational
+                systems where strategic agents interact with algorithms.
+            </li>
+        </ul>
+    </section>
+
+    <section id="publications">
+        <h2>Publications</h2>
+        <p class="muted">Coming soon.</p>
+    </section>
+
+    <section id="contact">
+        <h2>Contact</h2>
+        <ul class="contact">
+            <li><span class="label">Email</span><a href="mailto:liu_xiaokang@stu.pku.edu.cn">liu_xiaokang@stu.pku.edu.cn</a></li>
+            <li><span class="label">GitHub</span><a href="https://github.com/Liu-Yuanyi" target="_blank" rel="noopener">github.com/Liu-Yuanyi</a></li>
+        </ul>
+    </section>
+
+    <footer>
+        © 2026 Xiaokang Liu &nbsp;·&nbsp; <a href="../">Home</a>
+    </footer>
+</main>
+</body>
+</html>

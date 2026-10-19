@@ -44,6 +44,11 @@
             border-radius: 18px;
             flex-shrink: 0;
         }
+        /* 让文字区域在 flex 布局里可以收缩并自动换行 */
+        .hero > div {
+            flex: 1;
+            min-width: 0;
+        }
         h1 {
             margin: 0 0 0.35rem;
             font-family: Georgia, 'Times New Roman', 'Noto Serif SC', serif;
@@ -82,6 +87,8 @@
             letter-spacing: 0.01em;
         }
         p { margin: 0.65rem 0; }
+        /* 超长单词 / 链接也能换行，不会撑破容器 */
+        body { overflow-wrap: break-word; }
         a {
             color: var(--accent);
             text-decoration: none;
@@ -102,6 +109,12 @@
             font-weight: 600;
         }
         .muted { color: var(--muted); }
+        .current-work {
+            margin-top: 1.25rem;
+            padding-top: 0.9rem;
+            border-top: 1px dashed var(--rule);
+            font-size: 0.97rem;
+        }
 
         .contact {
             list-style: none;
@@ -111,6 +124,7 @@
         .contact li {
             margin: 0.5rem 0;
         }
+        .contact a { overflow-wrap: anywhere; }
         .contact .label {
             display: inline-block;
             width: 5.5rem;
@@ -155,30 +169,15 @@
 
     <section id="about">
         <h2>About</h2>
-        <p>
-            I am an undergraduate in the Turing Class at Peking University's School of Electronics
-            Engineering and Computer Science. I work on <strong>peer prediction</strong> — eliciting
-            truthful information from agents when no ground truth is available — with Prof. Yuqing Kong,
-            and on <strong>algorithmic game theory</strong> with Prof. Xiaotie Deng. More broadly,
-            I am interested in how strategic behavior shapes algorithms, markets, and information systems.
-        </p>
+        <p>I am an undergraduate in the Turing Class at Peking University's School of Electronics Engineering and Computer Science. I work on <strong>peer prediction</strong> with Prof. Yuqing Kong: designing mechanisms that make truthful reporting strictly optimal when information cannot be verified, and characterizing how much agents must communicate to achieve such guarantees.</p>
     </section>
 
     <section id="research">
         <h2>Research Interests</h2>
         <ul class="research">
-            <li>
-                <strong>Peer Prediction.</strong>
-                Designing truthful, incentive-compatible mechanisms for information elicitation
-                without verification — including multi-task settings and the communication
-                complexity of peer prediction.
-            </li>
-            <li>
-                <strong>Algorithmic Game Theory.</strong>
-                Mechanism design, auction theory, and equilibrium analysis in computational
-                systems where strategic agents interact with algorithms.
-            </li>
+            <li><strong>Peer Prediction.</strong> Designing truthful, incentive-compatible mechanisms for information elicitation without verification, and characterizing the communication required for exact signal recovery and for strong truthful incentives.</li>
         </ul>
+        <p class="current-work"><strong>Current work.</strong> We study two agents with a common joint prior, while the principal knows only a class of possible priors. For priors whose distinct signal posteriors are separated by at least <em>d</em> in Euclidean distance, we characterize the communication complexity of exact signal recovery as Θ(log <em>N</em> + log log(1/<em>d</em>)), and a one-round mechanism matches this bound. We further characterize the strongest uniform incentives achievable with payments in [0, 1]: the optimal loss per unit of transcript total variation is Θ(<em>d</em><sup>2</sup> + <em>d</em>/<em>N</em>). Finally, we show that even constant cooperative communication complexity need not imply low incentive-compatible communication complexity.</p>
     </section>
 
     <section id="publications">
